@@ -1,0 +1,7 @@
+= containers-labs
+
+This repository contains example projects designed as laboratory exercises for the 'Containers and Microservices' course at Collin College.
+
+image::images/podman.png[align="center"]
+
+== Prof. Juan Medina - Collin College
