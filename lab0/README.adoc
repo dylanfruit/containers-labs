@@ -1,6 +1,8 @@
 = Setting up the lab environment
 
-To set up a small lab environment using a virtual machine with Fedora Server Edition to learn containers using Podman, follow these steps. This guide assumes you're using VirtualBox or VMware and have a small computer available.
+The following instructions will guide you in setting up a small lab environment using a virtual machine running `Linux Fedora Server`. This environment will be utilized throughout the course to explore containers and microservices, with `Podman` as the default container engine.
+
+NOTE: If you choose to use a different Linux distribution or opt for Docker instead of Podman, please be aware that any installation or technical issues that arise will be your responsibility to resolve. 
 
 == 1. Download Fedora Server Edition ISO
 
