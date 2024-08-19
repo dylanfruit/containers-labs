@@ -8,6 +8,8 @@ NOTE: If you choose to use a different Linux distribution or opt for Docker inst
 
 Go to the https://fedoraproject.org/server/[Fedora official website] and download the latest Fedora Server Edition ISO.
 
+NOTE: Please consider your host computer's architecture when selecting the appropriate ISO for installation. Most systems will require the `For Intel and AMD x86_64 systems` ISO. However, if you are using a `MacOS` device, be sure to verify your architecture, as it may require the `For ARM® aarch64 systems` ISO.
+
 == 2. Install a virtualization engine
 
 If you don't have a virtualization engine already installed in your system go ahead and follow the instructions to download and install the one of your preference:
@@ -16,17 +18,17 @@ If you don't have a virtualization engine already installed in your system go ah
 
 ==== VirtualBox
 
-Download VirtualBox:
+*Download VirtualBox:*
 
 . Visit the https://www.virtualbox.org[VirtualBox official website].
 . Click on "Download VirtualBox."
 . Choose "Windows hosts" to download the installer.
 
-Install VirtualBox:
+*Install VirtualBox:*
 
 Once downloaded, double-click the installer file (VirtualBox-x.x.x-xxxx-Win.exe).
 
-Follow the installation wizard:
+*Follow the installation wizard:*
 
 . Click "Next" to accept the default settings.
 . Confirm and click "Install."
@@ -35,13 +37,13 @@ Follow the installation wizard:
 
 ==== VMware Workstation Player
 
-Download VMware Workstation Player:
+*Download VMware Workstation Player:*
 
 . Go to the https://www.vmware.com/info/workstation-player/evaluation[VMware Workstation Player] page.
 . Scroll down and click on "Download Now"
 . Choose the version for Windows to start the download.
 
-Install VMware Workstation Player:
+*Install VMware Workstation Player:*
 
 . Double-click the installer file (VMware-player-xx.x.x-xxxxxxx.exe).
 . Accept the license agreement.
@@ -52,7 +54,7 @@ Install VMware Workstation Player:
 
 ==== Hyper-V (Built into Windows Pro/Enterprise)
 
-Enable Hyper-V:
+*Enable Hyper-V:*
 
 Hyper-V is a built-in feature in Windows 10/11 Pro and Enterprise editions.
 
@@ -60,7 +62,7 @@ Hyper-V is a built-in feature in Windows 10/11 Pro and Enterprise editions.
 . Check the box for "Hyper-V" and click "OK."
 . Restart your computer to complete the installation.
 
-Access Hyper-V Manager:
+*Access Hyper-V Manager:*
 
 After rebooting, open the Start Menu and type "Hyper-V Manager" to launch the tool.
 
@@ -68,13 +70,13 @@ After rebooting, open the Start Menu and type "Hyper-V Manager" to launch the to
 
 ==== VirtualBox
 
-Download VirtualBox:
+*Download VirtualBox:*
 
 . Visit the https://www.virtualbox.org[VirtualBox official website].
 . Click on "Download VirtualBox."
 . Choose "macOS" to download the installer.
 
-Install VirtualBox:
+*Install VirtualBox:*
 
 . Once downloaded, double-click the installer file (VirtualBox-x.x.x-xxxx-OSX.dmg).
 . In the installer window, double-click "VirtualBox.pkg."
@@ -85,46 +87,48 @@ Install VirtualBox:
 
 ==== Parallels Desktop (non-free)
 
-Download Parallels Desktop:
+*Download Parallels Desktop:*
 
 . Visit the https://www.parallels.com/products/desktop/buy/?pd&new[Parallels Desktop website].
 . Click "Download Free Trial" or purchase a license to download the installer.
 
-Install Parallels Desktop:
+*Install Parallels Desktop:*
 
 . Double-click the downloaded file (ParallelsDesktop-x.x.x-xxxx.dmg).
 . In the installer window, double-click "Install."
 . Enter your macOS password when prompted.
 . If prompted, sign in to your Parallels account or create one.
 
-Start Using Parallels Desktop:
+*Start Using Parallels Desktop:*
 
 Launch Parallels Desktop from the Applications folder and follow the setup assistant to create or import a virtual machine.
 
 ==== QEMU
 
-Install Homebrew (If Not Already Installed) by opening Terminal and running:
+*Install Homebrew:*
+
+If Not Already Installed by opening Terminal and running:
 
 [source, shell]
 ----
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ----
 
-Install QEMU using Homebrew:
+*Install QEMU using Homebrew:*
 
 [source,shell]
 ----
 brew install qemu
 ----
 
-Verify Installation:
+*Verify Installation:*
 
 [source,shell]
 ----
 qemu-system-x86_64 --version
 ----
 
-Install UTM (QEMU Frontend for macOS):
+*Install UTM (QEMU Frontend for macOS):*
 
 UTM is a user-friendly front-end for QEMU on macOS.
 
@@ -199,7 +203,7 @@ Disk Capacity: Set the disk size to 40 GB and select "Store virtual disk as a si
 . Attach the ISO file of the OS.
 . Click "Create" and then "Start" to boot the VM.
 
-== 4. Install Fedora Server on the VM
+== 4. Install Fedora Server on the Created VM
 
 . Start the VM, and it will boot from the Fedora Server ISO.
 . Select your language and keyboard layout.
@@ -258,10 +262,39 @@ Run a basic container to ensure Podman is working correctly:
 
 [source,shell]
 ----
-podman run --rm -it fedora bash
+podman run --rm hello-world
 ----
 
-This command will pull the Fedora container image, run it interactively, and drop you into a bash shell.
+You should get an output similar to the following.
+
+[source,shell]
+----
+Resolved "hello-world" as an alias (/etc/containers/registries.conf.d/000-shortnames.conf)
+Trying to pull quay.io/podman/hello:latest...
+Getting image source signatures
+Copying blob 81df7ff16254 done   | 
+Copying config 5dd467fce5 done   | 
+Writing manifest to image destination
+!... Hello Podman World ...!
+
+         .--"--.           
+       / -     - \         
+      / (O)   (O) \        
+   ~~~| -=(,Y,)=- |         
+    .---. /`  \   |~~      
+ ~/  o  o \~~~~.----. ~~   
+  | =(X)= |~  / (O (O) \   
+   ~~~~~~~  ~| =(Y_)=-  |   
+  ~~~~    ~~~|   U      |~~ 
+
+Project:   https://github.com/containers/podman
+Website:   https://podman.io
+Desktop:   https://podman-desktop.io
+Documents: https://docs.podman.io
+YouTube:   https://youtube.com/@Podman
+X/Twitter: @Podman_io
+Mastodon:  @Podman_io@fosstodon.org
+----
 
 == 9. Optional: Install Cockpit for Web Management
 
@@ -284,3 +317,4 @@ sudo firewall-cmd --reload
 ----
 
 Access Cockpit through your browser at https://<your_VM_IP>:9090.
+
