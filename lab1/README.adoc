@@ -1,0 +1,503 @@
+= Application As Monolithic Architecture
+
+Imagine a real-world scenario where we model a monolithic architecture for an application within a pharmaceutical company. In this simplified emulation, we'll conceptualize the application as running on a single server. For the sake of clarity, we'll steer clear of delving into the intricacies of the actual code and instead concentrate on understanding the application's overarching functionalities and the 'big picture' it paints.
+
+== Prepare the environment for the boot camp
+
+Before delving into the intricacies of the application, let's organize our computer folder structure to accommodate the example applications we'll be using throughout this boot camp.
+
+1. Establish a dedicated directory for the examples:
++
+[source,shell]
+----
+$ mkdir -p app/{monolithic,microservice}
+----
++
+The command mentioned above will generate the following directory structure:
++
+[source,shell]
+----
+app
+├── microservice
+└── monolithic 
+----
+
+2. Let's ensure that we have all the prerequisites installed:
+
+Given that our application is developed in Python using the FLASK framework, our initial requirement is to have pip installed to facilitate the installation of flask."
+
+[source,shell]
+----
+$ sudo dnf install -yqq pip
+$ pip install Flask
+----
+
+== Establishing our Monolithic Application
+
+For the current phase, our attention will be dedicated to the monolithic aspect, with plans to revisit the microservice version later.
+
+Within this monolithic framework, we consolidate all functionalities, including order processing, placement, inventory management, delivery handling, user notifications, and other services encapsulated within a singular Flask application. This straightforward integration involves managing all operations within a single script.
+
+Proceed by creating the pharmacy.py Python script within the designated monolithic directory:"
+
+.pharmacy.py
+[source,python]
+----
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+# Dummy data structures to represent inventory, customers, and orders
+inventory = {
+    'medicine_A': {'stock': 100, 'price': 10},
+    'medicine_B': {'stock': 50, 'price': 15},
+    # ... other medicines
+}
+
+customers = {
+    'customer_id_1': {'name': 'John Doe', 'address': '123 Main St'},
+    'customer_id_2': {'name': 'Alice Smith', 'address': '456 Elm St'},
+    # ... other customers
+}
+
+orders = []
+
+@app.route('/place_order', methods=['POST'])
+def place_order():
+    order_details = request.json
+    
+    # Check if the requested medicine is available in inventory
+    medicine_name = order_details['medicine']
+    if medicine_name not in inventory:
+        return jsonify({'message': 'Medicine not available'}), 404
+    
+    requested_quantity = order_details['quantity']
+    available_quantity = inventory[medicine_name]['stock']
+    
+    if requested_quantity > available_quantity:
+        return jsonify({'message': 'Insufficient stock'}), 400
+    
+    # Process order
+    order_total = requested_quantity * inventory[medicine_name]['price']
+    new_stock = available_quantity - requested_quantity
+    
+    inventory[medicine_name]['stock'] = new_stock
+    
+    # Prepare order details
+    order = {
+        'customer_id': order_details['customer_id'],
+        'medicine': medicine_name,
+        'quantity': requested_quantity,
+        'total_price': order_total,
+        'status': 'Pending'
+    }
+    
+    orders.append(order)
+    
+    return jsonify({'message': 'Order placed successfully', 'order_details': order}), 201
+
+@app.route('/view_inventory', methods=['GET'])
+def view_inventory():
+    return jsonify({'inventory': inventory}), 200
+
+@app.route('/view_orders', methods=['GET'])
+def view_orders():
+    return jsonify({'orders': orders}), 200
+
+@app.route('/view_customer/<customer_id>', methods=['GET'])
+def view_customer(customer_id):
+    if customer_id not in customers:
+        return jsonify({'message': 'Customer not found'}), 404
+    
+    return jsonify({'customer_details': customers[customer_id]}), 200
+
+if __name__ == '__main__':
+    app.run(debug=True)
+----
+
+Run the Flask application with the following command:
+
+[source,shell]
+----
+$ python3 pharmacy.py
+ * Serving Flask app 'pharmacy'
+ * Debug mode: on
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 120-148-555
+----
+
+As our application runs on port 5000, the debugger currently occupies our terminal. Consequently, we need to open a new terminal to simplify testing the application through direct API calls using CURL commands.
+
+== Testing the Application
+
+Once the Flask app is operational, it's usually accessible at http://127.0.0.1:5000/ or http://localhost:5000/ by default.
+
+Tools such as Postman or cURL can be employed to send requests to various endpoints defined in the Flask application (e.g., /place_order, /view_inventory, /view_orders, /view_customer/<customer_id>).
+
+Keep in mind that this example involves running a basic Flask server locally solely for testing purposes. In a production environment, the application would be deployed on a dedicated server and typically integrated with a database for robust data storage.
+
+Let's initiate the testing phase with a straightforward direct call to our application:
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5000
+<!doctype html>
+<html lang=en>
+<title>404 Not Found</title>
+<h1>Not Found</h1>
+<p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>
+----
+
+While we can confirm that the application is responsive, it's apparent that the specific instruction we intended to pass is currently unavailable. This is because we didn't provide any instructions in the previous attempt.
+
+Let's try again, this time focusing on verifying the inventory:
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5000/view_inventory
+{
+  "inventory": {
+    "medicine_A": {
+      "price": 10,
+      "stock": 100
+    },
+    "medicine_B": {
+      "price": 15,
+      "stock": 50
+    }
+  }
+}
+----
+
+It's evident that making direct calls to an API is a straightforward process. Now, let's leverage the view_customer function to retrieve and display information about our customers:
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5000/view_customer/customer_id_1
+{
+  "customer_details": {
+    "address": "123 Main St",
+    "name": "John Doe"
+  }
+}
+
+$ curl http://127.0.0.1:5000/view_customer/customer_id_2
+{
+  "customer_details": {
+    "address": "456 Elm St",
+    "name": "Alice Smith"
+  }
+}
+----
+
+Let's attempt to display our active orders, although we are aware that they are currently empty:
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5000/view_orders
+{
+  "orders": []
+}
+----
+
+Proceeding to introduce an order into the system. If we carefully examine our application code, we'll observe that order placement utilizes the POST method. 
+
+[source,shell]
+----
+$ curl -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"customer_id": "customer_id_1", "medicine": "medicine_A", "quantity": 5}' \
+    http://localhost:5000/place_order
+
+{
+  "message": "Order placed successfully",
+  "order_details": {
+    "customer_id": "customer_id_1",
+    "medicine": "medicine_A",
+    "quantity": 5,
+    "status": "Pending",
+    "total_price": 50
+  }
+}
+----
+
+Consequently, we can now retrieve and display our active orders once again:
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5000/view_orders
+{
+  "orders": [
+    {
+      "customer_id": "customer_id_1",
+      "medicine": "medicine_A",
+      "quantity": 5,
+      "status": "Pending",
+      "total_price": 50
+    }
+  ]
+}
+----
+
+== Creating Microservices for Our Application
+
+To transition from the monolithic architecture of the pharmacy application to a microservices-oriented approach, we will segment functionalities into distinct Flask applications, each representing a separate service. The services we'll create include Inventory Management, Order Processing, Customer Management, and Billing.
+
+IMPORTANT: All the files mentioned below must be created within the microservices folder.
+
+=== Inventory Management Service
+
+This service is responsible for handling operations related to inventory.
+
+.inventory_service.py
+[source,python]
+----
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+inventory = {
+    'medicine_A': {'stock': 100, 'price': 10},
+    'medicine_B': {'stock': 50, 'price': 15},
+    # ... other medicines
+}
+
+@app.route('/view_inventory', methods=['GET'])
+def view_inventory():
+    return jsonify({'inventory': inventory}), 200
+
+if __name__ == '__main__':
+    app.run(port=5001)
+----
+
+=== Order Processing Service
+
+This service oversees the processes of order placement and tracking.
+
+.order_service.py
+[source,python]
+----
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+orders = []
+
+# Endpoint to place orders
+@app.route('/place_order', methods=['POST'])
+def place_order():
+    # Process order logic
+    # ...
+
+    return jsonify({'message': 'Order placed successfully'}), 201
+
+# Endpoint to view orders
+@app.route('/view_orders', methods=['GET'])
+def view_orders():
+    return jsonify({'orders': orders}), 200
+
+if __name__ == '__main__':
+    app.run(port=5002)
+----
+
+=== Customer Management Service
+
+This service is dedicated to handling customer information and details.
+
+.customer_service.py
+[source,python]
+----
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+customers = {
+    'customer_id_1': {'name': 'John Doe', 'address': '123 Main St'},
+    'customer_id_2': {'name': 'Alice Smith', 'address': '456 Elm St'},
+    # ... other customers
+}
+
+@app.route('/view_customer/<customer_id>', methods=['GET'])
+def view_customer(customer_id):
+    if customer_id not in customers:
+        return jsonify({'message': 'Customer not found'}), 404
+    
+    return jsonify({'customer_details': customers[customer_id]}), 200
+
+if __name__ == '__main__':
+    app.run(port=5003)
+----
+
+=== Billing Service
+
+Responsible for managing billing and payment processes.
+
+.billing_service.py
+[source,python]
+----
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+# Additional billing functionality can be added here
+
+if __name__ == '__main__':
+    app.run(port=5004)
+----
+
+== Running Our Microservices
+
+Each of these services should be stored in separate files and can be executed independently, as each application operates on its designated port.
+
+[source,shell]
+----
+$ ls 
+billing_service.py  customer_service.py  inventory_service.py  order_service.py
+
+$ grep app.run *.py
+billing_service.py:    app.run(port=5004)
+customer_service.py:    app.run(port=5003)
+inventory_service.py:    app.run(port=5001)
+order_service.py:    app.run(port=5002)
+----
+
+IMPORTANT: Before proceeding, ensure the termination of the monolithic application running on port 5000 by using the CTRL+C key combination in the first opened terminal.
+
+To run each service independently, open four separate terminals, one for each service, and execute them as follows:
+
+[source,shell]
+----
+# On terminal one:
+$ python3 inventory_service.py
+# On terminal two:
+$ python3 order_service.py
+# On terminal three:
+$ python3 customer_service.py
+# On terminal four:
+$ python3 billing_service.py
+----
+
+These services can communicate with each other through HTTP requests (API calls) or message brokers like Kafka or RabbitMQ, depending on your specific requirements.
+
+== Testing Our Microservices Application
+
+Once all the Flask apps are operational, they can typically be accessed at http://127.0.0.1:500?/ or http://localhost:500?/ by default. (Note the ? in the port, which will change based on the type of service.)
+
+Let's now attempt to verify the inventory running on port 5001:
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5001/view_inventory
+{"inventory":{"medicine_A":{"price":10,"stock":100},"medicine_B":{"price":15,"stock":50}}}
+----
+
+If an attempt is made to use the view_inventory service on a different port, it will result in failure, as this service is exclusively running on port 5001.
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5002/view_inventory
+<!doctype html>
+<html lang=en>
+<title>404 Not Found</title>
+<h1>Not Found</h1>
+<p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>
+----
+
+Moving forward, let's review our customer information accessible on port 5003:
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5003/view_customer/customer_id_1
+{"customer_details":{"address":"123 Main St","name":"John Doe"}}
+
+$ curl http://127.0.0.1:5003/view_customer/customer_id_2
+{"customer_details":{"address":"456 Elm St","name":"Alice Smith"}}
+----
+
+Given that we are aware there are currently no active orders, let's proceed to add one using the service running on port 5002. 
+
+[source,shell]
+----
+$ curl -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"customer_id": "customer_id_1", "medicine": "medicine_A", "quantity": 5}' \
+    http://localhost:5002/place_order
+
+{"message":"Order placed successfully"}
+----
+
+Subsequently, we can print our active orders by utilizing the view_orders service running on the same port 5002.
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5002/view_orders
+{"orders":[]}
+----
+
+Notice something went wrong with the view_orders service – it appears to be failing to store the order. Let's address this issue!
+
+Importantly, there is no need to halt the service at this point. Open the order_service.py script and replace the existing code with the following:
+
+.order_service.py
+[source,python]
+----
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+orders = []
+
+# Endpoint to place orders
+@app.route('/place_order', methods=['POST'])
+def place_order():
+    order_details = request.json
+    medicine_name = order_details['medicine']
+    requested_quantity = order_details['quantity']
+
+    # Prepare order details
+    order = {
+        'customer_id': order_details['customer_id'],
+        'medicine': medicine_name,
+        'quantity': requested_quantity,
+        'status': 'Pending'
+    }
+    
+    orders.append(order)
+    
+    return jsonify({'message': 'Order placed successfully', 'order_details': order}), 201
+
+# Endpoint to view orders
+@app.route('/view_orders', methods=['GET'])
+def view_orders():
+    return jsonify({'orders': orders}), 200
+
+if __name__ == '__main__':
+    app.run(port=5002)
+----
+
+Next, use the CTRL + c key combination to halt the service currently running on the second terminal, and immediately restart the service.
+
+Now, proceed to add an order. 
+
+[source,shell]
+----
+$ curl -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"customer_id": "customer_id_1", "medicine": "medicine_A", "quantity": 5}' \
+    http://localhost:5002/place_order
+
+{"message":"Order placed successfully","order_details":{"customer_id":"customer_id_1","medicine":"medicine_A","quantity":5,"status":"Pending"}}
+----
+
+Subsequently, print our active orders using the view_orders service running on port 5002:
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5002/view_orders
+{"orders":[{"customer_id":"customer_id_1","medicine":"medicine_A","quantity":5,"status":"Pending"}]}
+----
+
+Great! We have successfully transitioned to the microservices version of our application."

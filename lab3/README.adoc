@@ -1,0 +1,156 @@
+= Creating images from running containers
+
+Our containers are running from our previous module but if we are required to stop one of them all the applied changes will be lost, to retain their current state we have to build images from them as follows:
+
+[source,shell]
+----
+$ podman commit inventory_service inventory_image:manual
+
+Getting image source signatures
+Copying blob 8ff7ad910417 skipped: already exists  
+Copying blob 7626b6db7c8a done   | 
+Copying config c795e24d01 done   | 
+Writing manifest to image destination
+c795e24d01571ce2e0c6fbcaf2ed7c1805936daf8fb815e46eea4183d86cad91
+
+$ podman commit order_service order_image:manual
+
+Getting image source signatures
+Copying blob 8ff7ad910417 skipped: already exists  
+Copying blob 1a5df1d6db01 done   | 
+Copying config 1686fcc661 done   | 
+Writing manifest to image destination
+1686fcc661b5a94cd4dd21d6e0f61e6bfb644810ee77341ee5575a4b7eaae887
+
+$ podman commit customer_service customer_image:manual
+
+Getting image source signatures
+Copying blob 8ff7ad910417 skipped: already exists  
+Copying blob 181c2bc17af5 done   | 
+Copying config 4984b299ab done   | 
+Writing manifest to image destination
+4984b299abcc92be1b70114661b2a2d342865730c2cfc638b118ce3f6f8b35ba
+
+$ podman commit billing_service billing_image:manual
+
+Getting image source signatures
+Copying blob 8ff7ad910417 skipped: already exists  
+Copying blob 761f512011f3 done   | 
+Copying config 5a57576464 done   | 
+Writing manifest to image destination
+5a57576464cc4c0b97c57064cc34d4d252d959e5c10cb54bfbe7f9cf14a6d664
+----
+
+Notice, we have added the `manual` tag to the container name only to identify that these images where created from the containers that where made following the manual process.
+
+Great!, now we have images with all the requirements and files needed for each and everyone of our containers.
+
+[source,shell]
+----
+$ podman images
+REPOSITORY                         TAG         IMAGE ID      CREATED             SIZE
+localhost/billing_image            manual      5a57576464cc  About a minute ago  480 MB
+localhost/customer_image           manual      4984b299abcc  About a minute ago  479 MB
+localhost/order_image              manual      1686fcc661b5  About a minute ago  480 MB
+localhost/inventory_image          manual      c795e24d0157  About a minute ago  480 MB
+----
+
+Excellent, now let's stop all the running containers
+
+[source,shell]
+----
+$ podman stop $(podman ps -q)
+$ podman ps
+CONTAINER ID  IMAGE       COMMAND     CREATED     STATUS      PORTS       NAMES
+----
+
+and run them again but this time using the newly created images
+
+[source,shell]
+----
+$ podman run --rm --name inventory_service --network host -d localhost/inventory_image:manual python3 inventory_service.py 
+$ podman run --rm --name order_service --network host -d localhost/order_image:manual python3 order_service.py
+$ podman run --rm --name customer_service --network host -d localhost/customer_image:manual python3 customer_service.py
+$ podman run --rm --name billing_service --network host -d localhost/billing_image:manual python3 billing_service.py
+----
+
+Let's test a service to be sure is working
+
+[source,shell]
+----
+$ curl http://0.0.0.0:5001/view_inventory
+{"inventory":{"medicine_A":{"price":10,"stock":100},"medicine_B":{"price":15,"stock":50}}}
+----
+
+Notice, that when we run the containers we had to use the image corresponding to the service in question and instead of running `/bin/bash` as we did in the previous module we directly run the application and didn't had to install anything else or copy files because they are already included in the image.
+
+== Improving the scenario
+
+Wait! why do we have to create four different images when we know that the only difference between them is the source code file in question? Why don't instead we create a single image with all the code and selectively run each service?
+
+Let's take any of the running containers, maybe the `inventory_service` and let's just copy all the source code that is missed in this container
+
+We can see what we have in the container:
+
+[source,shell]
+----
+$ podman exec -ti inventory_service ls -l *.py
+ls: cannot access 'billing_service.py': No such file or directory
+ls: cannot access 'customer_service.py': No such file or directory
+ls: cannot access 'order_service.py': No such file or directory
+-rw-r--r--. 1 root root 363 Jan 13 20:04 inventory_service.py
+----
+
+We are missing three files let's add them:
+
+[source,shell]
+----
+$ podman cp billing_service.py inventory_service:/
+$ podman cp customer_service.py inventory_service:/
+$ podman cp order_service.py inventory_service:/
+----
+
+Now this running container has all the dependencies and all the files, let's create our complete image and call it pharmacy but still with the manual tag:
+
+[source,shell]
+----
+$ podman commit inventory_service pharmacy:manual
+Getting image source signatures
+Copying blob 8ff7ad910417 skipped: already exists  
+Copying blob 7626b6db7c8a skipped: already exists  
+Copying blob c4d6c5cb2292 done   | 
+Copying config 640b67933c done   | 
+Writing manifest to image destination
+640b67933c89f0e811f6336a40743ec420ab9b5c45f528bce22418d4d4059dce
+----
+
+We can once again stop all the running containers and we can also delete the individual images created before:
+
+[source,shell]
+----
+$ podman stop $(podman ps -q)
+
+$ podman ps
+CONTAINER ID  IMAGE       COMMAND     CREATED     STATUS      PORTS       NAMES
+
+$ podman rmi localhost/billing_image:manual localhost/customer_image:manual localhost/order_image:manual localhost/inventory_image:manual
+Untagged: localhost/billing_image:manual
+Untagged: localhost/customer_image:manual
+Untagged: localhost/order_image:manual
+Untagged: localhost/inventory_image:manual
+Deleted: 5a57576464cc4c0b97c57064cc34d4d252d959e5c10cb54bfbe7f9cf14a6d664
+Deleted: 4984b299abcc92be1b70114661b2a2d342865730c2cfc638b118ce3f6f8b35ba
+Deleted: 1686fcc661b5a94cd4dd21d6e0f61e6bfb644810ee77341ee5575a4b7eaae887
+----
+
+and run all of them again but this time using the pharmacy image for all of them
+
+[source,shell]
+----
+$ podman run --rm --name inventory_service --network host -d localhost/pharmacy:manual python3 inventory_service.py 
+$ podman run --rm --name order_service --network host -d localhost/pharmacy:manual python3 order_service.py
+$ podman run --rm --name customer_service --network host -d localhost/pharmacy:manual python3 customer_service.py
+$ podman run --rm --name billing_service --network host -d localhost/pharmacy:manual python3 billing_service.py
+----
+
+Notice, now with a single image we are running all the services which is easier to control and definetively more efficient.

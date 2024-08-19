@@ -1,0 +1,62 @@
+= Troubleshooting the application
+
+Let's review the logs of the application using the LNAV LogFile Navigator which we will start by installing:
+
+[source,shell]
+----
+$ sudo dnf install -y lnav
+----
+
+We can now use it agains any of the running containers as follows:
+
+[source,shell]
+----
+$ sudo journalctl CONTAINER_NAME=order_service | lnav
+----
+
+We can also monitor the performance of the application containers. The running processes can be seen with the following command:
+
+[source,shell]
+----
+$ podman top order_service
+----
+
+Performance statistics can be found using the following command:
+
+[source,shell]
+----
+$ podman stats
+----
+
+But while using containers we should always aim for self-healing processes. If you remember in our previous modules we continue to verify the availability of the application by testing it like:
+
+[source,shell]
+----
+$ curl http://0.0.0.0:5001/view_inventory
+{"inventory":{"medicine_A":{"price":10,"stock":100},"medicine_B":{"price":15,"stock":50}}}
+----
+
+What if we can add the healthcheck at runtime?
+
+[source,shell]
+----
+$ podman run \
+    --rm --name inventory_service --network pharmacy -p 5001:5001 \
+    --health-cmd='curl http://0.0.0.0:5001/view_inventory || exit 1' \
+    --health-interval=0 -d localhost/pharmacy:v5 inventory_service.py
+----
+
+Now we can at anytime run the healthcheck and if there is no answer means we are OK!
+
+[source,shell]
+----
+$ podman healthcheck run inventory_service
+----
+
+Even if we don't run it manually the healthcheck is continously being executed
+
+[source,shell]
+----
+$ podman inspect --format='{{json .State.Health.Status}}' inventory_service
+"healthy"
+----

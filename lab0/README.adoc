@@ -1,0 +1,284 @@
+= Setting up the lab environment
+
+To set up a small lab environment using a virtual machine with Fedora Server Edition to learn containers using Podman, follow these steps. This guide assumes you're using VirtualBox or VMware and have a small computer available.
+
+== 1. Download Fedora Server Edition ISO
+
+Go to the https://fedoraproject.org/server/[Fedora official website] and download the latest Fedora Server Edition ISO.
+
+== 2. Install a virtualization engine
+
+If you don't have a virtualization engine already installed in your system go ahead and follow the instructions to download and install the one of your preference:
+
+=== For Windows
+
+==== VirtualBox
+
+Download VirtualBox:
+
+. Visit the https://www.virtualbox.org[VirtualBox official website].
+. Click on "Download VirtualBox."
+. Choose "Windows hosts" to download the installer.
+
+Install VirtualBox:
+
+Once downloaded, double-click the installer file (VirtualBox-x.x.x-xxxx-Win.exe).
+
+Follow the installation wizard:
+
+. Click "Next" to accept the default settings.
+. Confirm and click "Install."
+. You may be prompted to install device software; click "Install."
+. After installation, click "Finish" to launch VirtualBox.
+
+==== VMware Workstation Player
+
+Download VMware Workstation Player:
+
+. Go to the https://www.vmware.com/info/workstation-player/evaluation[VMware Workstation Player] page.
+. Scroll down and click on "Download Now"
+. Choose the version for Windows to start the download.
+
+Install VMware Workstation Player:
+
+. Double-click the installer file (VMware-player-xx.x.x-xxxxxxx.exe).
+. Accept the license agreement.
+. Choose the installation folder.
+. Select additional features if needed (e.g., shortcuts).
+. Click "Install."
+. After installation, click "Finish" to launch VMware Workstation Player.
+
+==== Hyper-V (Built into Windows Pro/Enterprise)
+
+Enable Hyper-V:
+
+Hyper-V is a built-in feature in Windows 10/11 Pro and Enterprise editions.
+
+. Open the "Control Panel" and go to "Programs" > "Turn Windows features on or off."
+. Check the box for "Hyper-V" and click "OK."
+. Restart your computer to complete the installation.
+
+Access Hyper-V Manager:
+
+After rebooting, open the Start Menu and type "Hyper-V Manager" to launch the tool.
+
+=== For macOS
+
+==== VirtualBox
+
+Download VirtualBox:
+
+. Visit the https://www.virtualbox.org[VirtualBox official website].
+. Click on "Download VirtualBox."
+. Choose "macOS" to download the installer.
+
+Install VirtualBox:
+
+. Once downloaded, double-click the installer file (VirtualBox-x.x.x-xxxx-OSX.dmg).
+. In the installer window, double-click "VirtualBox.pkg."
+. Click "Continue" and "Install."
+. You may be prompted to enter your macOS password.
+. If a security warning appears, go to "System Preferences" > "Security & Privacy" and click "Allow."
+. After installation, click "Close."
+
+==== Parallels Desktop (non-free)
+
+Download Parallels Desktop:
+
+. Visit the https://www.parallels.com/products/desktop/buy/?pd&new[Parallels Desktop website].
+. Click "Download Free Trial" or purchase a license to download the installer.
+
+Install Parallels Desktop:
+
+. Double-click the downloaded file (ParallelsDesktop-x.x.x-xxxx.dmg).
+. In the installer window, double-click "Install."
+. Enter your macOS password when prompted.
+. If prompted, sign in to your Parallels account or create one.
+
+Start Using Parallels Desktop:
+
+Launch Parallels Desktop from the Applications folder and follow the setup assistant to create or import a virtual machine.
+
+==== QEMU
+
+Install Homebrew (If Not Already Installed) by opening Terminal and running:
+
+[source, shell]
+----
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+----
+
+Install QEMU using Homebrew:
+
+[source,shell]
+----
+brew install qemu
+----
+
+Verify Installation:
+
+[source,shell]
+----
+qemu-system-x86_64 --version
+----
+
+Install UTM (QEMU Frontend for macOS):
+
+UTM is a user-friendly front-end for QEMU on macOS.
+
+Visit https://mac.getutm.app[UTM official website] and download the latest version.
+Drag and drop the UTM app to your Applications folder.
+
+== 3. Create a New Virtual Machine
+
+Here's a guide to creating a virtual machine (VM) with at least 3 GB of RAM, 1 CPU, and a 40 GB hard drive using the virtualization engines discussed earlier for Windows and macOS.
+
+=== VirtualBox
+
+. Open VirtualBox and click on the "New" button.
+. Name: Enter a name for your VM 
+. Type: Linux
+. Version: Fedora (64-bit)
+. Memory Size: Set the memory (RAM) to a minimum of 3072 MB (3 GB).
+. Choose "Create a virtual hard disk now" and click "Create."
+. Select "VDI (VirtualBox Disk Image)" and click "Next."
+. Choose "Fixed size" to improve performance.
+. Set the hard disk size to 40 GB and click "Create."
+. CPU Configuration:
+.. Click on "Settings" > "System" > "Processor."
+.. Allocate at least 1 CPU core.
+. Attach an ISO File:
+.. Under "Storage," click on the empty disk icon and then the disk icon next to "Optical Drive."
+.. Choose the ISO file of the operating system you want to install.
+. Click "Start" to boot the VM and begin the OS installation.
+
+=== VMware Workstation Player
+
+. Open VMware Workstation Player and click "Create a New Virtual Machine."
+. Installer Disk Image File: Choose "Installer disc image file (iso)" and browse to the location of your OS ISO file.
+. Virtual Machine Name: Enter a name for your VM and choose a location to store it.
+Disk Capacity: Set the disk size to 40 GB and select "Store virtual disk as a single file."
+. Customize Hardware:
+.. Click on "Customize Hardware."
+.. Set the memory to a minimum of 3072 MB (3 GB).
+.. Set the number of processors to at least 1.
+. Click "Close" and then "Finish."
+. Start the VM: Click "Play virtual machine" to install the OS.
+
+=== Hyper-V
+
+. Open Hyper-V Manager and click on "New" > "Virtual Machine."
+. Name the Virtual Machine: Enter a name for your VM.
+. Specify Generation: Choose "Generation 1" for most cases unless you need UEFI, in which case choose "Generation 2."
+. Assign Memory: Allocate a minimum of 3072 MB (3 GB) of RAM.
+. Configure Networking: Select a network switch
+. Connect Virtual Hard Disk: Create a new virtual hard disk with 40 GB of space.
+. Installation Options: Install an operating system later or connect an ISO image.
+. Click "Finish" and then "Start" to boot the VM.
+
+=== Parallels Desktop
+
+. Open Parallels Desktop and click "File" > "New."
+. Choose Installation Method: Select "Install Windows or another OS from a DVD or image file" and select the OS image.
+. Set Up VM Configuration:
+.. Set the RAM to a minimum of 3072 MB (3 GB).
+.. Set the number of CPU cores to at least 1.
+.. Set the hard disk size to 40 GB.
+. Name your VM and choose a location.
+. Click "Create" and then "Start" to launch the VM.
+
+=== UTM (Using QEMU Backend)
+
+. Open UTM and click on "Create a New Virtual Machine."
+. Choose the OS you want to install.
+. Set the memory to a minimum of 3072 MB (3 GB).
+. Set the number of CPU cores to at least 1.
+. Create a new virtual hard disk with 40 GB of space.
+. Attach the ISO file of the OS.
+. Click "Create" and then "Start" to boot the VM.
+
+== 4. Install Fedora Server on the VM
+
+. Start the VM, and it will boot from the Fedora Server ISO.
+. Select your language and keyboard layout.
+. Set the installation destination to the virtual hard disk you created.
+. Configure the network if needed.
+. Set a root password and create a user account.
+. After installation, reboot the VM and remove the installation media.
+
+== 5. Update Fedora Server
+
+. Log in to your VM.
+. Run the following commands to update the system:
+
+[source,shell]
+----
+sudo dnf upgrade -y
+sudo systemctl reboot
+----
+
+== 6. Install Podman
+
+. Log in to your VM
+. Install Podman using the following command:
+
+[source,shell]
+----
+sudo dnf install -y podman
+----
+
+Verify the installation by checking the Podman version:
+
+[source,shell]
+----
+podman --version
+----
+
+== 7. Configure the Environment for Podman
+
+Enable user namespaces if necessary:
+
+[source,shell]
+----
+sudo sysctl -w user.max_user_namespaces=15000
+----
+
+Ensure that your user is part of the wheel group (for root privileges):
+
+[source,shell]
+----
+sudo usermod -aG wheel your_username
+----
+
+== 8. Test Podman with a Simple Container
+
+Run a basic container to ensure Podman is working correctly:
+
+[source,shell]
+----
+podman run --rm -it fedora bash
+----
+
+This command will pull the Fedora container image, run it interactively, and drop you into a bash shell.
+
+== 9. Optional: Install Cockpit for Web Management
+
+Cockpit provides a web interface to manage your server and containers.
+
+Install and enable Cockpit with:
+
+[source,shell]
+----
+sudo dnf install -y cockpit cockpit-*
+sudo systemctl enable --now cockpit.socket
+----
+
+Open the firewall for Cockpit:
+
+[source,shell]
+----
+sudo firewall-cmd --permanent --zone=public --add-service=cockpit
+sudo firewall-cmd --reload
+----
+
+Access Cockpit through your browser at https://<your_VM_IP>:9090.

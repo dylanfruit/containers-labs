@@ -1,0 +1,146 @@
+= Managing Containers with Commands
+
+Let's run the microservices application created in the previous module but as containers created manually.
+
+Running microservices without `Containerfiles` or `pre-built images` involves running each microservice manually. This can be more complex and less standardized than using containerization, but it's possible. 
+
+Each container will have to be treated as a new server so all the dependencies will have to be solved before we can run the microservices on each and we will have to take into account the communication between the containers and other networking aspects.
+
+IMPORTANT: Start by stopping the microservices running from the previous module and close those terminals.
+
+To manually run a container we will use the `run` subcommand of `podman` using `fedora` as our baseline image but we have to consider the port in which each service will be running and the name of the service.
+
+[source,shell]
+----
+$ podman run --rm --name inventory_service --network host -dti fedora /bin/bash
+$ podman run --rm --name order_service --network host -dti fedora /bin/bash
+$ podman run --rm --name customer_service --network host -dti fedora /bin/bash
+$ podman run --rm --name billing_service --network host -dti fedora /bin/bash
+----
+
+We can now see our containers running:
+
+[source,shell]
+----
+$ podman ps 
+CONTAINER ID  IMAGE                                     COMMAND     CREATED         STATUS         PORTS       NAMES
+89d43412438b  registry.fedoraproject.org/fedora:latest  /bin/bash   2 minutes ago   Up 2 minutes               inventory_service
+36621434c603  registry.fedoraproject.org/fedora:latest  /bin/bash   13 seconds ago  Up 14 seconds              order_service
+d1f611a5bde1  registry.fedoraproject.org/fedora:latest  /bin/bash   8 seconds ago   Up 8 seconds               customer_service
+80bd1c9ac0f3  registry.fedoraproject.org/fedora:latest  /bin/bash   4 seconds ago   Up 4 seconds               billing_service
+----
+
+But wait!. This containers do not have `python3` or `pip` or `flask` and of course they don't have the corresponding code. Let's fix that!
+
+[source,shell]
+----
+# Install dependencies
+$ podman exec -ti inventory_service dnf install -y python3 pip
+$ podman exec -ti order_service dnf install -y python3 pip
+$ podman exec -ti customer_service dnf install -y python3 pip
+$ podman exec -ti billing_service dnf install -y python3 pip
+
+# Install flask
+$ podman exec -ti inventory_service pip install Flask
+$ podman exec -ti order_service pip install Flask
+$ podman exec -ti customer_service pip install Flask
+$ podman exec -ti billing_service pip install Flask
+
+# Copy the code
+$ podman cp inventory_service.py inventory_service:/
+$ podman cp order_service.py order_service:/
+$ podman cp customer_service.py customer_service:/
+$ podman cp billing_service.py billing_service:/
+----
+
+We can verify that our files are now in the containers by running the following command:
+
+[source,shell]
+----
+$ podman exec -ti inventory_service ls -l inventory_service.*
+$ podman exec -ti  order_service ls -l order_service.*
+$ podman exec -ti  customer_service ls -l customer_service.*
+$ podman exec -ti  billing_service ls -l billing_service.*
+----
+
+Now each running container has its own dependencies solved and required code so let's star the services.
+
+[source,shell]
+----
+$ podman exec -d inventory_service python3 inventory_service.py
+$ podman exec -d order_service python3 order_service.py
+$ podman exec -d customer_service python3 customer_service.py
+$ podman exec -d billing_service python3 billing_service.py
+----
+
+We should be able to see the processes running on each container:
+
+[source,shell]
+----
+$ podman top inventory_service
+$ podman top order_service
+$ podman top customer_service
+$ podman top billing_service
+----
+
+We can also see the processes running in the host server:
+
+[source,shell]
+----
+$ ps -ef | grep service.py
+----
+
+== Testing 
+
+Just like we did in the previous module, we can test the services using the cURL command:
+
+Let's try verifying the inventory running on port 5001:
+
+[source,shell]
+----
+$ curl http://0.0.0.0:5001/view_inventory
+{"inventory":{"medicine_A":{"price":10,"stock":100},"medicine_B":{"price":15,"stock":50}}}
+----
+
+If we try to use the `view_inventory` service on a different port it will fail because that service is only running on the `5001` port.
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5002/view_inventory
+<!doctype html>
+<html lang=en>
+<title>404 Not Found</title>
+<h1>Not Found</h1>
+<p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>
+----
+
+Now we can review our customers running on port 5003:
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5003/view_customer/customer_id_1
+{"customer_details":{"address":"123 Main St","name":"John Doe"}}
+
+$ curl http://127.0.0.1:5003/view_customer/customer_id_2
+{"customer_details":{"address":"456 Elm St","name":"Alice Smith"}}
+----
+
+We know there are not active orders, so let's go ahead and add one using the service running on port 5002.
+
+[source,shell]
+----
+$ curl -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"customer_id": "customer_id_1", "medicine": "medicine_A", "quantity": 5}' \
+    http://localhost:5002/place_order
+
+{"message":"Order placed successfully"}
+----
+
+We can print our active orders using the view_orders service running on port 5002:
+
+[source,shell]
+----
+$ curl http://127.0.0.1:5002/view_orders
+{"orders":[{"customer_id":"customer_id_1","medicine":"medicine_A","quantity":5,"status":"Pending"}]}
+----

@@ -1,0 +1,157 @@
+= Adding security to our application
+
+Let's create a new login screen for our application
+
+.authentication.py
+[source,python]
+----
+class SimpleAuthentication:
+    def __init__(self):
+        # Hardcoding a sample username and password for demonstration purposes
+        self.valid_username = "user123"
+        self.valid_password = "password123"
+
+    def authenticate(self, username, password):
+        if username == self.valid_username and password == self.valid_password:
+            return True
+        else:
+            return False
+
+if __name__ == "__main__":
+    # Create an instance of SimpleAuthentication
+    authentication = SimpleAuthentication()
+
+    # Get username and password from the user
+    username = input("Enter your username: ")
+    password = input("Enter your password: ")
+
+    # Authenticate the user
+    if authentication.authenticate(username, password):
+        print(f"Welcome, {username}! Authentication successful.")
+    else:
+        print("Error: Invalid username or password. Authentication failed.")
+----
+
+Notice, the credentials are hardcoded.
+
+If we want to test it locally, we can:
+
+[source,shell]
+----
+$ python3 authentication.py
+Enter your username: fakename
+Enter your password: fakepassword
+Error: Invalid username or password. Authentication failed.
+
+$ python3 authentication.py
+Enter your username: user123
+Enter your password: password123
+Welcome, user123! Authentication successful.
+----
+
+Let's now add convert the solution into a container and test it.
+
+.Containerfile
+[source,dockerfile]
+----
+FROM fedora
+RUN dnf install -yqq python3
+COPY authentication.py .
+CMD ["python3", "authentication.py"]
+----
+
+Build, run and test!
+
+[source,shell]
+----
+$ podman build -t authenticator:v1 .
+$ podman run --rm -ti --name authenticator localhost/authenticator:v1
+Enter your username: user123
+Enter your password: password123
+Welcome, user123! Authentication successful.
+----
+
+Passing all this information in clear text and every single time the container is executed is not the best approach
+
+Let's start by modifying our application so it takes the credentials from environment variables
+
+[source,python]
+----
+import secrets
+import os
+
+class SecureAuthentication:
+    def __init__(self):
+        # Load credentials from environment variables
+        self.valid_username = os.getenv("VALID_USERNAME")
+        self.valid_password = os.getenv("VALID_PASSWORD")
+
+    def authenticate(self, username, password):
+        # Use secrets.compare_digest for constant-time comparison
+        if username == self.valid_username and secrets.compare_digest(password, self.valid_password):
+            return True
+        else:
+            return False
+
+if __name__ == "__main__":
+    # Create an instance of SecureAuthentication
+    authentication = SecureAuthentication()
+
+    # Get username and password from the user
+    username = input("Enter your username: ")
+    password = input("Enter your password: ")
+
+    # Authenticate the user
+    if authentication.authenticate(username, password):
+        print(f"Welcome, {username}! Authentication successful.")
+    else:
+        print("Error: Invalid username or password. Authentication failed.")
+----
+
+Build version 2, run and test!
+
+[source,shell]
+----
+$ podman build -t authenticator:v2 .
+$ podman run --rm -ti --name authenticator -e VALID_USERNAME=user123 -e VALID_PASSWORD=password123 localhost/authenticator:v2
+Enter your username: user123
+Enter your password: password123
+Welcome, user123! Authentication successful.
+----
+
+Notice that this time the code no longer has the credentials hardcoded but we are still passing them in clear text when running the container.
+
+To avoid this we can make use of secrets. Let's add the secret directly using the following commands:
+
+[source,shell]
+----
+$ printf "user123" | podman secret create username - 
+2fc833daa70b54c79f2dbce5c
+
+$ printf "password123" | podman secret create password - 
+d7b9dff4f0d87bfb77401e2a4
+----
+
+Now we can list our secrets
+
+[source,shell]
+----
+$ podman secret list
+ID                         NAME        DRIVER      CREATED             UPDATED
+2fc833daa70b54c79f2dbce5c  username    file        About a minute ago  About a minute ago
+d7b9dff4f0d87bfb77401e2a4  password    file        About a minute ago  About a minute ago
+----
+
+Now we can run the container again registering the secrets as environment variables at run time, and therefor the real values are never exposed.
+
+[source,shell]
+----
+$ podman run --rm -ti --name authenticator \
+    --secret=username,type=env,target=VALID_USERNAME \
+    --secret=password,type=env,target=VALID_PASSWORD \
+    localhost/authenticator:v2
+Enter your username: user123
+Enter your password: password123
+Welcome, user123! Authentication successful
+----
+
