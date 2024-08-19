@@ -6,15 +6,15 @@ Imagine a real-world scenario where we model a monolithic architecture for an ap
 
 Before delving into the intricacies of the application, let's organize our computer folder structure to accommodate the example applications we'll be using throughout this boot camp.
 
-1. Establish a dedicated directory for the examples:
-+
+Establish a dedicated directory for the examples:
+
 [source,shell]
 ----
-$ mkdir -p app/{monolithic,microservice}
+mkdir -p app/{monolithic,microservice}
 ----
-+
+
 The command mentioned above will generate the following directory structure:
-+
+
 [source,shell]
 ----
 app
@@ -22,14 +22,14 @@ app
 └── monolithic 
 ----
 
-2. Let's ensure that we have all the prerequisites installed:
+Let's ensure that we have all the prerequisites installed:
 
 Given that our application is developed in Python using the FLASK framework, our initial requirement is to have pip installed to facilitate the installation of flask."
 
 [source,shell]
 ----
-$ sudo dnf install -yqq pip
-$ pip install Flask
+sudo dnf install -yqq pip
+pip install Flask
 ----
 
 == Establishing our Monolithic Application
@@ -38,82 +38,7 @@ For the current phase, our attention will be dedicated to the monolithic aspect,
 
 Within this monolithic framework, we consolidate all functionalities, including order processing, placement, inventory management, delivery handling, user notifications, and other services encapsulated within a singular Flask application. This straightforward integration involves managing all operations within a single script.
 
-Proceed by creating the pharmacy.py Python script within the designated monolithic directory:"
-
-.pharmacy.py
-[source,python]
-----
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
-
-# Dummy data structures to represent inventory, customers, and orders
-inventory = {
-    'medicine_A': {'stock': 100, 'price': 10},
-    'medicine_B': {'stock': 50, 'price': 15},
-    # ... other medicines
-}
-
-customers = {
-    'customer_id_1': {'name': 'John Doe', 'address': '123 Main St'},
-    'customer_id_2': {'name': 'Alice Smith', 'address': '456 Elm St'},
-    # ... other customers
-}
-
-orders = []
-
-@app.route('/place_order', methods=['POST'])
-def place_order():
-    order_details = request.json
-    
-    # Check if the requested medicine is available in inventory
-    medicine_name = order_details['medicine']
-    if medicine_name not in inventory:
-        return jsonify({'message': 'Medicine not available'}), 404
-    
-    requested_quantity = order_details['quantity']
-    available_quantity = inventory[medicine_name]['stock']
-    
-    if requested_quantity > available_quantity:
-        return jsonify({'message': 'Insufficient stock'}), 400
-    
-    # Process order
-    order_total = requested_quantity * inventory[medicine_name]['price']
-    new_stock = available_quantity - requested_quantity
-    
-    inventory[medicine_name]['stock'] = new_stock
-    
-    # Prepare order details
-    order = {
-        'customer_id': order_details['customer_id'],
-        'medicine': medicine_name,
-        'quantity': requested_quantity,
-        'total_price': order_total,
-        'status': 'Pending'
-    }
-    
-    orders.append(order)
-    
-    return jsonify({'message': 'Order placed successfully', 'order_details': order}), 201
-
-@app.route('/view_inventory', methods=['GET'])
-def view_inventory():
-    return jsonify({'inventory': inventory}), 200
-
-@app.route('/view_orders', methods=['GET'])
-def view_orders():
-    return jsonify({'orders': orders}), 200
-
-@app.route('/view_customer/<customer_id>', methods=['GET'])
-def view_customer(customer_id):
-    if customer_id not in customers:
-        return jsonify({'message': 'Customer not found'}), 404
-    
-    return jsonify({'customer_details': customers[customer_id]}), 200
-
-if __name__ == '__main__':
-    app.run(debug=True)
-----
+The code is a simple python script that can be found in this repository called pharmacy.py that simulates the monolithic application.
 
 Run the Flask application with the following command:
 
@@ -251,102 +176,22 @@ IMPORTANT: All the files mentioned below must be created within the microservice
 === Inventory Management Service
 
 This service is responsible for handling operations related to inventory.
-
 .inventory_service.py
-[source,python]
-----
-from flask import Flask, jsonify
-
-app = Flask(__name__)
-
-inventory = {
-    'medicine_A': {'stock': 100, 'price': 10},
-    'medicine_B': {'stock': 50, 'price': 15},
-    # ... other medicines
-}
-
-@app.route('/view_inventory', methods=['GET'])
-def view_inventory():
-    return jsonify({'inventory': inventory}), 200
-
-if __name__ == '__main__':
-    app.run(port=5001)
-----
 
 === Order Processing Service
 
 This service oversees the processes of order placement and tracking.
-
 .order_service.py
-[source,python]
-----
-from flask import Flask, jsonify, request
-
-app = Flask(__name__)
-
-orders = []
-
-# Endpoint to place orders
-@app.route('/place_order', methods=['POST'])
-def place_order():
-    # Process order logic
-    # ...
-
-    return jsonify({'message': 'Order placed successfully'}), 201
-
-# Endpoint to view orders
-@app.route('/view_orders', methods=['GET'])
-def view_orders():
-    return jsonify({'orders': orders}), 200
-
-if __name__ == '__main__':
-    app.run(port=5002)
-----
 
 === Customer Management Service
 
 This service is dedicated to handling customer information and details.
-
 .customer_service.py
-[source,python]
-----
-from flask import Flask, jsonify
-
-app = Flask(__name__)
-
-customers = {
-    'customer_id_1': {'name': 'John Doe', 'address': '123 Main St'},
-    'customer_id_2': {'name': 'Alice Smith', 'address': '456 Elm St'},
-    # ... other customers
-}
-
-@app.route('/view_customer/<customer_id>', methods=['GET'])
-def view_customer(customer_id):
-    if customer_id not in customers:
-        return jsonify({'message': 'Customer not found'}), 404
-    
-    return jsonify({'customer_details': customers[customer_id]}), 200
-
-if __name__ == '__main__':
-    app.run(port=5003)
-----
 
 === Billing Service
 
 Responsible for managing billing and payment processes.
-
 .billing_service.py
-[source,python]
-----
-from flask import Flask, jsonify
-
-app = Flask(__name__)
-
-# Additional billing functionality can be added here
-
-if __name__ == '__main__':
-    app.run(port=5004)
-----
 
 == Running Our Microservices
 
@@ -442,41 +287,6 @@ Notice something went wrong with the view_orders service – it appears to be fa
 Importantly, there is no need to halt the service at this point. Open the order_service.py script and replace the existing code with the following:
 
 .order_service.py
-[source,python]
-----
-from flask import Flask, jsonify, request
-
-app = Flask(__name__)
-
-orders = []
-
-# Endpoint to place orders
-@app.route('/place_order', methods=['POST'])
-def place_order():
-    order_details = request.json
-    medicine_name = order_details['medicine']
-    requested_quantity = order_details['quantity']
-
-    # Prepare order details
-    order = {
-        'customer_id': order_details['customer_id'],
-        'medicine': medicine_name,
-        'quantity': requested_quantity,
-        'status': 'Pending'
-    }
-    
-    orders.append(order)
-    
-    return jsonify({'message': 'Order placed successfully', 'order_details': order}), 201
-
-# Endpoint to view orders
-@app.route('/view_orders', methods=['GET'])
-def view_orders():
-    return jsonify({'orders': orders}), 200
-
-if __name__ == '__main__':
-    app.run(port=5002)
-----
 
 Next, use the CTRL + c key combination to halt the service currently running on the second terminal, and immediately restart the service.
 
