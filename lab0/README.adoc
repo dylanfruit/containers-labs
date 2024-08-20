@@ -111,21 +111,21 @@ If Not Already Installed by opening Terminal and running:
 
 [source, shell]
 ----
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+$ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ----
 
 *Install QEMU using Homebrew:*
 
 [source,shell]
 ----
-brew install qemu
+$ brew install qemu
 ----
 
 *Verify Installation:*
 
 [source,shell]
 ----
-qemu-system-x86_64 --version
+$ qemu-system-x86_64 --version
 ----
 
 *Install UTM (QEMU Frontend for macOS):*
@@ -219,8 +219,8 @@ Disk Capacity: Set the disk size to 40 GB and select "Store virtual disk as a si
 
 [source,shell]
 ----
-sudo dnf upgrade -y
-sudo systemctl reboot
+$ sudo dnf upgrade -y
+$ sudo systemctl reboot
 ----
 
 == 6. Install Podman
@@ -230,14 +230,14 @@ sudo systemctl reboot
 
 [source,shell]
 ----
-sudo dnf install -y podman
+$ sudo dnf install -y podman
 ----
 
 Verify the installation by checking the Podman version:
 
 [source,shell]
 ----
-podman --version
+$ podman --version
 ----
 
 == 7. Configure the Environment for Podman
@@ -246,14 +246,14 @@ Enable user namespaces if necessary:
 
 [source,shell]
 ----
-sudo sysctl -w user.max_user_namespaces=15000
+$ sudo sysctl -w user.max_user_namespaces=15000
 ----
 
 Ensure that your user is part of the wheel group (for root privileges):
 
 [source,shell]
 ----
-sudo usermod -aG wheel your_username
+$ sudo usermod -aG wheel your_username
 ----
 
 == 8. Test Podman with a Simple Container
@@ -262,13 +262,15 @@ Run a basic container to ensure Podman is working correctly:
 
 [source,shell]
 ----
-podman run --rm hello-world
+$ podman run --rm hello-world
 ----
 
 You should get an output similar to the following.
 
 [source,shell]
 ----
+$ podman run --rm hello-world
+
 Resolved "hello-world" as an alias (/etc/containers/registries.conf.d/000-shortnames.conf)
 Trying to pull quay.io/podman/hello:latest...
 Getting image source signatures
@@ -304,16 +306,16 @@ Install and enable Cockpit with:
 
 [source,shell]
 ----
-sudo dnf install -y cockpit cockpit-*
-sudo systemctl enable --now cockpit.socket
+$ sudo dnf install -y cockpit cockpit-*
+$ sudo systemctl enable --now cockpit.socket
 ----
 
 Open the firewall for Cockpit:
 
 [source,shell]
 ----
-sudo firewall-cmd --permanent --zone=public --add-service=cockpit
-sudo firewall-cmd --reload
+$ sudo firewall-cmd --permanent --zone=public --add-service=cockpit
+$ sudo firewall-cmd --reload
 ----
 
 Access Cockpit through your browser at https://<your_VM_IP>:9090.

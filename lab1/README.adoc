@@ -12,13 +12,15 @@ Every application needs a designated location to reside, so let’s begin by cre
 
 [source,shell]
 ----
-mkdir -p app/{monolithic,microservice}
+$ mkdir -p app/{monolithic,microservice}
 ----
 
 The command above will generate a directory structure as the following:
 
 [source,shell]
 ----
+$ tree
+
 app
 ├── microservice
 └── monolithic 
@@ -32,8 +34,8 @@ Given that our application is developed in Python using the FLASK framework, our
 
 [source,shell]
 ----
-sudo dnf install -y pip
-pip install Flask
+$ sudo dnf install -y pip
+$ pip install Flask
 ----
 
 === Executing our Monolithic Application
@@ -47,6 +49,7 @@ The code is a simple python script that can be found in this repository called p
 [source,shell]
 ----
 $ python3 pharmacy.py
+
  * Serving Flask app 'pharmacy'
  * Debug mode: on
  * Running on http://127.0.0.1:5000
@@ -73,6 +76,7 @@ Let's initiate the testing phase with a straightforward direct call to our appli
 [source,shell]
 ----
 $ curl http://127.0.0.1:5000
+
 <!doctype html>
 <html lang=en>
 <title>404 Not Found</title>
@@ -87,6 +91,7 @@ Let's try again, this time focusing on verifying the inventory:
 [source,shell]
 ----
 $ curl http://127.0.0.1:5000/view_inventory
+
 {
   "inventory": {
     "medicine_A": {
@@ -106,6 +111,7 @@ It's evident that making direct calls to an API is a straightforward process. No
 [source,shell]
 ----
 $ curl http://127.0.0.1:5000/view_customer/customer_id_1
+
 {
   "customer_details": {
     "address": "123 Main St",
@@ -114,6 +120,7 @@ $ curl http://127.0.0.1:5000/view_customer/customer_id_1
 }
 
 $ curl http://127.0.0.1:5000/view_customer/customer_id_2
+
 {
   "customer_details": {
     "address": "456 Elm St",
@@ -127,6 +134,7 @@ Let's attempt to display our active orders, although we are aware that they are 
 [source,shell]
 ----
 $ curl http://127.0.0.1:5000/view_orders
+
 {
   "orders": []
 }
@@ -158,6 +166,7 @@ Consequently, we can now retrieve and display our active orders once again:
 [source,shell]
 ----
 $ curl http://127.0.0.1:5000/view_orders
+
 {
   "orders": [
     {
@@ -199,6 +208,7 @@ Each of these services should be stored in separate files and can be executed in
 [source,shell]
 ----
 $ ls microservice/
+
 billing_service.py  customer_service.py  inventory_service.py  order_service.py
 ----
 
@@ -207,6 +217,7 @@ Notice, that different from our previous monolithic version, here every service 
 [source,shell]
 ----
 $ grep app.run *.py | sort -n
+
 inventory_service.py:    app.run(port=5001)
 order_service.py:    app.run(port=5002)
 customer_service.py:    app.run(port=5003)
@@ -219,28 +230,28 @@ On terminal one:
 
 [source,shell]
 ----
-python3 inventory_service.py
+$ python3 inventory_service.py
 ----
 
 On terminal two:
 
 [source,shell]
 ----
-python3 order_service.py
+$ python3 order_service.py
 ----
 
 On terminal three:
 
 [source,shell]
 ----
-python3 customer_service.py
+$ python3 customer_service.py
 ----
 
 On terminal four:
 
 [source,shell]
 ----
-python3 billing_service.py
+$ python3 billing_service.py
 ----
 
 These services can communicate with each other through HTTP requests (API calls) or message brokers like Kafka or RabbitMQ, depending on your specific requirements.
@@ -254,6 +265,7 @@ Let's now attempt to verify the inventory running on port 5001:
 [source,shell]
 ----
 $ curl http://127.0.0.1:5001/view_inventory
+
 {"inventory":{"medicine_A":{"price":10,"stock":100},"medicine_B":{"price":15,"stock":50}}}
 ----
 
@@ -262,6 +274,7 @@ If an attempt is made to use the view_inventory service on a different port, it 
 [source,shell]
 ----
 $ curl http://127.0.0.1:5002/view_inventory
+
 <!doctype html>
 <html lang=en>
 <title>404 Not Found</title>
@@ -274,9 +287,11 @@ Moving forward, let's review our customer information accessible on port 5003:
 [source,shell]
 ----
 $ curl http://127.0.0.1:5003/view_customer/customer_id_1
+
 {"customer_details":{"address":"123 Main St","name":"John Doe"}}
 
 $ curl http://127.0.0.1:5003/view_customer/customer_id_2
+
 {"customer_details":{"address":"456 Elm St","name":"Alice Smith"}}
 ----
 
@@ -297,6 +312,7 @@ Subsequently, we can print our active orders by utilizing the view_orders servic
 [source,shell]
 ----
 $ curl http://127.0.0.1:5002/view_orders
+
 {"orders":[]}
 ----
 
@@ -323,6 +339,7 @@ Subsequently, print our active orders using the view_orders service running on p
 [source,shell]
 ----
 $ curl http://127.0.0.1:5002/view_orders
+
 {"orders":[{"customer_id":"customer_id_1","medicine":"medicine_A","quantity":5,"status":"Pending"}]}
 ----
 

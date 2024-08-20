@@ -1,14 +1,16 @@
 = Managing Containers with Commands
 
-Let's run the microservices application created in the previous module but as containers created manually.
+We have executed our demo application as a monolith and as microservices but so far we haven't use containers to host it, instead we used regular services running on a machine
 
-Running microservices without `Containerfiles` or `pre-built images` involves running each microservice manually. This can be more complex and less standardized than using containerization, but it's possible. 
+Running microservices without `Containerfiles` or `pre-built images` involves running each microservice manually. This can be more complex and less standardized, but it's possible. 
 
-Each container will have to be treated as a new server so all the dependencies will have to be solved before we can run the microservices on each and we will have to take into account the communication between the containers and other networking aspects.
+Each container will have to be treated as a new machine so all the dependencies will have to be solved before we can execute the microservice and network connectivity will have to be taken into account to allow communication between the containers.
 
-IMPORTANT: Start by stopping the microservices running from the previous module and close those terminals.
+IMPORTANT: Be sure all previously executed microservices are stopped by closing the terminals that where running the services.
 
-To manually run a container we will use the `run` subcommand of `podman` using `fedora` as our baseline image but we have to consider the port in which each service will be running and the name of the service.
+To manually run a container we will use the `run` subcommand of `podman` using `fedora` as our `baseline image` but we have to consider the `port` required for each service and the `name` of the service.
+
+Open a terminal and execute the following commands to create the containers:
 
 [source,shell]
 ----
@@ -18,52 +20,78 @@ $ podman run --rm --name customer_service --network host -dti fedora /bin/bash
 $ podman run --rm --name billing_service --network host -dti fedora /bin/bash
 ----
 
-We can now see our containers running:
+Notice:
+
+. We added the `--rm` option to make sure the containers are deleted from our system once we are done working with them.
+. We used the network `host` that connects the containers to the same network as our host computer avoiding communication problems.
+- We also added the `-dti` flags to indicate that we want the container to be created `detached` with a `tty` or `terminal` and in `interactive` mode so we can connect to it.
+- We used `fedora` as our baseline image
+- Finally, we run the command `/bin/bash` that opens a terminal in which we can interact with the container.
+
+We can now see our containers running by executing the `podman ps` command:
 
 [source,shell]
 ----
-$ podman ps 
-CONTAINER ID  IMAGE                                     COMMAND     CREATED         STATUS         PORTS       NAMES
-89d43412438b  registry.fedoraproject.org/fedora:latest  /bin/bash   2 minutes ago   Up 2 minutes               inventory_service
-36621434c603  registry.fedoraproject.org/fedora:latest  /bin/bash   13 seconds ago  Up 14 seconds              order_service
-d1f611a5bde1  registry.fedoraproject.org/fedora:latest  /bin/bash   8 seconds ago   Up 8 seconds               customer_service
-80bd1c9ac0f3  registry.fedoraproject.org/fedora:latest  /bin/bash   4 seconds ago   Up 4 seconds               billing_service
+$ podman ps
+
+CONTAINER ID  IMAGE                 COMMAND     CREATED         STATUS   NAMES
+89d43412438b  fedoraproject/fedora  /bin/bash   2 minutes ago   Up 2 min inventory_service
+36621434c603  fedoraproject/fedora  /bin/bash   13 seconds ago  Up 4 sec order_service
+d1f611a5bde1  fedoraproject/fedora  /bin/bash   8 seconds ago   Up 8 sec customer_service
+80bd1c9ac0f3  fedoraproject/fedora  /bin/bash   4 seconds ago   Up 4 sec billing_service
 ----
 
-But wait!. This containers do not have `python3` or `pip` or `flask` and of course they don't have the corresponding code. Let's fix that!
+== Preparing containers
+
+But wait!. These containers do not have `python3` or `pip` or `flask` and of course they don't have the corresponding code of our application. Let's fix that!
+
+Let's start by installing the dependencies:
 
 [source,shell]
 ----
-# Install dependencies
 $ podman exec -ti inventory_service dnf install -y python3 pip
 $ podman exec -ti order_service dnf install -y python3 pip
 $ podman exec -ti customer_service dnf install -y python3 pip
 $ podman exec -ti billing_service dnf install -y python3 pip
+----
 
-# Install flask
+Notice we are using the `exec` subcommand of `podman` to execute a command inside the container. In this case the command executed is `dnf install -y python3 pip` to install both python and pip.
+
+Now, we use the previously installed `pip` application to install `Flask` on every container using the same methodology as before.
+
+[source,shell]
+----
 $ podman exec -ti inventory_service pip install Flask
 $ podman exec -ti order_service pip install Flask
 $ podman exec -ti customer_service pip install Flask
 $ podman exec -ti billing_service pip install Flask
+----
 
-# Copy the code
+Finally, we have to copy the code of our application on the corresponding container so it is available for execution.
+
+[source,shell]
+----
 $ podman cp inventory_service.py inventory_service:/
 $ podman cp order_service.py order_service:/
 $ podman cp customer_service.py customer_service:/
 $ podman cp billing_service.py billing_service:/
 ----
 
-We can verify that our files are now in the containers by running the following command:
+Notice, this time we used the `cp` subcommand of `podman` to copy a file from our local filesystem at the host computer into the container in a given location.
+
+To verify that our files where successfully copied we can run the following commands:
 
 [source,shell]
 ----
-$ podman exec -ti inventory_service ls -l inventory_service.*
-$ podman exec -ti  order_service ls -l order_service.*
-$ podman exec -ti  customer_service ls -l customer_service.*
-$ podman exec -ti  billing_service ls -l billing_service.*
+$ podman exec -ti inventory_service ls -l *_service.py
+$ podman exec -ti  order_service ls -l  *_service.py
+$ podman exec -ti  customer_service ls -l *_service.py
+$ podman exec -ti  billing_service ls -l *_service.py
 ----
 
-Now each running container has its own dependencies solved and required code so let's star the services.
+== Executing services 
+
+Now each running container is ready so let's star the services:
 
 [source,shell]
 ----
@@ -73,7 +101,7 @@ $ podman exec -d customer_service python3 customer_service.py
 $ podman exec -d billing_service python3 billing_service.py
 ----
 
-We should be able to see the processes running on each container:
+By running the `top` subcommand of `podman` we should be able to see the processes running:
 
 [source,shell]
 ----
@@ -83,14 +111,14 @@ $ podman top customer_service
 $ podman top billing_service
 ----
 
-We can also see the processes running in the host server:
+We can also see the processes running directly from the host server, because remember that at the end containers are also processes running in the host:
 
 [source,shell]
 ----
 $ ps -ef | grep service.py
 ----
 
-== Testing 
+== Testing our
 
 Just like we did in the previous module, we can test the services using the cURL command:
 
@@ -99,6 +127,7 @@ Let's try verifying the inventory running on port 5001:
 [source,shell]
 ----
 $ curl http://0.0.0.0:5001/view_inventory
+
 {"inventory":{"medicine_A":{"price":10,"stock":100},"medicine_B":{"price":15,"stock":50}}}
 ----
 
@@ -107,6 +136,7 @@ If we try to use the `view_inventory` service on a different port it will fail b
 [source,shell]
 ----
 $ curl http://127.0.0.1:5002/view_inventory
+
 <!doctype html>
 <html lang=en>
 <title>404 Not Found</title>
@@ -119,9 +149,11 @@ Now we can review our customers running on port 5003:
 [source,shell]
 ----
 $ curl http://127.0.0.1:5003/view_customer/customer_id_1
+
 {"customer_details":{"address":"123 Main St","name":"John Doe"}}
 
 $ curl http://127.0.0.1:5003/view_customer/customer_id_2
+
 {"customer_details":{"address":"456 Elm St","name":"Alice Smith"}}
 ----
 
@@ -142,5 +174,10 @@ We can print our active orders using the view_orders service running on port 500
 [source,shell]
 ----
 $ curl http://127.0.0.1:5002/view_orders
+
 {"orders":[{"customer_id":"customer_id_1","medicine":"medicine_A","quantity":5,"status":"Pending"}]}
 ----
+
+Now that our services are running independently in containers, they can fully leverage the advantages of containerized applications. We've initiated them manually, but next, let's adopt a more automated and efficient approach.
+
+image::../images/containerized.png[]
