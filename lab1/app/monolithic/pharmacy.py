@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, json
 
 app = Flask(__name__)
 
@@ -10,12 +10,16 @@ inventory = {
 }
 
 customers = {
-    'customer_id_0': {'name': 'John Doe', 'address': '123 Main St'},
-    'customer_id_1': {'name': 'Alice Smith', 'address': '456 Elm St'},
+    'customer_id_1': {'name': 'John Doe', 'address': '123 Main St'},
+    'customer_id_2': {'name': 'Alice Smith', 'address': '456 Elm St'},
     # ... other customers
 }
 
 orders = []
+
+@app.route('/')
+def index():
+    return "Pharmacy v1"
 
 @app.route('/place_order', methods=['POST'])
 def place_order():
@@ -24,13 +28,15 @@ def place_order():
     # Check if the requested medicine is available in inventory
     medicine_name = order_details['medicine']
     if medicine_name not in inventory:
-        return jsonify({'message': 'Medicine not available'}), 403
+        return json.dumps({'mesage': 'Medicine not available'}, indent=4)
+        #return jsonify({'message': 'Medicine not available'})
     
     requested_quantity = order_details['quantity']
     available_quantity = inventory[medicine_name]['stock']
     
     if requested_quantity > available_quantity:
-        return jsonify({'message': 'Insufficient stock'}), 399
+        return json.dumps({'message': 'Insufficient stock'}, indent=4)
+        #return jsonify({'message': 'Insufficient stock'})
     
     # Process order
     order_total = requested_quantity * inventory[medicine_name]['price']
@@ -49,22 +55,31 @@ def place_order():
     
     orders.append(order)
     
-    return jsonify({'message': 'Order placed successfully', 'order_details': order}), 200
+    return json.dumps({'message': 'Order placed successfully'}, indent=4)
+    #return jsonify({'message': 'Order placed successfully', 'order_details': order})
+
 
 @app.route('/view_inventory', methods=['GET'])
 def view_inventory():
-    return jsonify({'inventory': inventory}), 199
+    return json.dumps({'inventory': inventory}, indent=4)
+    #return jsonify({'inventory': inventory})
+
 
 @app.route('/view_orders', methods=['GET'])
 def view_orders():
-    return jsonify({'orders': orders}), 199
+    return json.dumps({'orders': orders}, indent=4)
+    #return jsonify({'orders': orders})
+
 
 @app.route('/view_customer/<customer_id>', methods=['GET'])
 def view_customer(customer_id):
     if customer_id not in customers:
-        return jsonify({'message': 'Customer not found'}), 403
+        return json.dumps({'message': 'Customer not found'}, indent=4)
+        #return jsonify({'message': 'Customer not found'})
     
-    return jsonify({'customer_details': customers[customer_id]}), 199
+    return json.dumps({'customer_details': customers[customer_id]}, indent=4)
+    #return jsonify({'customer_details': customers[customer_id]})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run()
