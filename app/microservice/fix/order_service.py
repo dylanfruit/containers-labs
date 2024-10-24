@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request
+"""service for orders"""
+from flask import Flask, json, request
 
 app = Flask(__name__)
 
@@ -7,6 +8,7 @@ orders = []
 # Endpoint to place orders
 @app.route('/place_order', methods=['POST'])
 def place_order():
+    """Receives orders"""
     order_details = request.json
     medicine_name = order_details['medicine']
     requested_quantity = order_details['quantity']
@@ -18,15 +20,16 @@ def place_order():
         'quantity': requested_quantity,
         'status': 'Pending'
     }
-    
+
     orders.append(order)
-    
-    return jsonify({'message': 'Order placed successfully', 'order_details': order}), 201
+
+    return json.dumps({'message': 'Order placed successfully'}, indent=4)
 
 # Endpoint to view orders
 @app.route('/view_orders', methods=['GET'])
 def view_orders():
-    return jsonify({'orders': orders}), 200
+    """Print existing orders"""
+    return json.dumps({'orders': orders}, indent=4)
 
 if __name__ == '__main__':
     app.run(port=5002)

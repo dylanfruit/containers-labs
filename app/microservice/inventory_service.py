@@ -1,4 +1,5 @@
-from flask import Flask, jsonify
+"""service for inventories"""
+from flask import Flask, json
 
 app = Flask(__name__)
 
@@ -10,7 +11,8 @@ inventory = {
 
 @app.route('/view_inventory', methods=['GET'])
 def view_inventory():
-    return jsonify({'inventory': inventory}), 200
+    """Prints the inventory"""
+    return json.dumps({'inventory': inventory}, indent=4)
 
 if __name__ == '__main__':
     app.run(port=5001)

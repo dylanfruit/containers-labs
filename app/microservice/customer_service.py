@@ -1,4 +1,5 @@
-from flask import Flask, jsonify
+"""Service for customers"""
+from flask import Flask, json
 
 app = Flask(__name__)
 
@@ -10,10 +11,11 @@ customers = {
 
 @app.route('/view_customer/<customer_id>', methods=['GET'])
 def view_customer(customer_id):
+    """Prints existing customers"""
     if customer_id not in customers:
-        return jsonify({'message': 'Customer not found'}), 404
-    
-    return jsonify({'customer_details': customers[customer_id]}), 200
+        return json.dumps({'message': 'Customer not found'}, indent=4)
+
+    return json.dumps({'customer_details': customers[customer_id]}, indent=4)
 
 if __name__ == '__main__':
     app.run(port=5003)

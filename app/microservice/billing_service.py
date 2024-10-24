@@ -1,3 +1,4 @@
+"""service for billing"""
 from flask import Flask, jsonify
 
 app = Flask(__name__)

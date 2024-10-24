@@ -1,4 +1,6 @@
-from flask import Flask, request, jsonify, json
+"""Script that simulates a pharmaceutical system"""
+from flask import Flask, request, json
+
 
 app = Flask(__name__)
 
@@ -19,31 +21,32 @@ orders = []
 
 @app.route('/')
 def index():
+    """main function"""
     return "Pharmacy v1"
 
 @app.route('/place_order', methods=['POST'])
 def place_order():
+    """Receives orders"""
+
     order_details = request.json
-    
+
     # Check if the requested medicine is available in inventory
     medicine_name = order_details['medicine']
     if medicine_name not in inventory:
-        return json.dumps({'mesage': 'Medicine not available'}, indent=4)
-        #return jsonify({'message': 'Medicine not available'})
-    
+        return json.dumps({'message': 'Medicine not available'}, indent=4)
+
     requested_quantity = order_details['quantity']
     available_quantity = inventory[medicine_name]['stock']
-    
+
     if requested_quantity > available_quantity:
         return json.dumps({'message': 'Insufficient stock'}, indent=4)
-        #return jsonify({'message': 'Insufficient stock'})
-    
+
     # Process order
     order_total = requested_quantity * inventory[medicine_name]['price']
     new_stock = available_quantity - requested_quantity
-    
+
     inventory[medicine_name]['stock'] = new_stock
-    
+
     # Prepare order details
     order = {
         'customer_id': order_details['customer_id'],
@@ -52,34 +55,31 @@ def place_order():
         'total_price': order_total,
         'status': 'Pending'
     }
-    
+
     orders.append(order)
-    
+
     return json.dumps({'message': 'Order placed successfully'}, indent=4)
-    #return jsonify({'message': 'Order placed successfully', 'order_details': order})
 
 
 @app.route('/view_inventory', methods=['GET'])
 def view_inventory():
+    """Prints the inventory"""
     return json.dumps({'inventory': inventory}, indent=4)
-    #return jsonify({'inventory': inventory})
 
 
 @app.route('/view_orders', methods=['GET'])
 def view_orders():
+    """Print existing orders"""
     return json.dumps({'orders': orders}, indent=4)
-    #return jsonify({'orders': orders})
 
 
 @app.route('/view_customer/<customer_id>', methods=['GET'])
 def view_customer(customer_id):
+    """Prints existing customers"""
     if customer_id not in customers:
         return json.dumps({'message': 'Customer not found'}, indent=4)
-        #return jsonify({'message': 'Customer not found'})
-    
+
     return json.dumps({'customer_details': customers[customer_id]}, indent=4)
-    #return jsonify({'customer_details': customers[customer_id]})
 
 if __name__ == '__main__':
-    # app.run(debug=True)
-    app.run()
+    app.run(debug=True)
