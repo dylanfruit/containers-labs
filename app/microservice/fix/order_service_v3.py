@@ -1,30 +1,12 @@
 """service for orders with value retention and inter-service communication"""
 from flask import Flask, json, request
-import json
-import os
-import requests
+import requests 
 
 app = Flask(__name__)
 
-# File to store orders
-ORDERS_FILE = '/data/orders.json'
-INVENTORY_API_URL = "http://127.0.0.1:5001"
+orders = []
+INVENTORY_API_URL = "http://127.0.0.1:5001" # URL for the inventory service
 
-# Create the orders file if it doesn't exist                                                   
-if not os.path.exists(ORDERS_FILE):
-   with open(ORDERS_FILE, 'w') as f:
-      json.dump([], f)
- 
-def read_orders():
-   """Read orders from file"""
-   with open(ORDERS_FILE, 'r') as f:
-      return json.load(f)
- 
-def write_orders(orders):
-   """Write orders to file"""
-   with open(ORDERS_FILE, 'w') as f:
-      json.dump(orders, f, indent=2)
-  
 # Endpoint to place orders
 @app.route('/place_order', methods=['POST'])
 def place_order():
@@ -53,9 +35,7 @@ def place_order():
         'status': 'Pending'
     }
 
-    allorders = read_orders()
-    allorders.append(order)
-    write_orders(allorders)
+    orders.append(order)
 
     return json.dumps({'message': 'Order placed successfully'}, indent=4)
 
@@ -63,8 +43,7 @@ def place_order():
 @app.route('/view_orders', methods=['GET'])
 def view_orders():
     """Print existing orders"""
-	allorders = read_orders()
-    return json.dumps({'orders': allorders}, indent=4)
+    return json.dumps({'orders': orders}, indent=4)
 
 if __name__ == '__main__':
     app.run(port=5002)
