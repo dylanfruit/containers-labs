@@ -2,7 +2,7 @@
 # Author: Juan Medina
 # Date: Jul 2025
 # Description: Setup Microservices Class System
-# curl -sL https://github.com/your-script.sh | bash
+# curl -sL https://raw.githubusercontent.com/containersorg/containers-labs/refs/heads/main/tools/fast-init.sh | sudo bash
 
 set -o pipefail
 
