@@ -108,7 +108,7 @@
           - firefox
           - flatpak
           - gnome-tweaks
-          - google-chrome
+          # - google-chrome
           - vim
           - wget
           - fuse-sshfs
@@ -282,6 +282,7 @@
           check_mode: false
 
         - name: Set Terminator custom-keybindings
+          become: true
           become_user: "{{ username }}"
           vars:
             custom0: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/
@@ -295,6 +296,7 @@
           changed_when: false
 
         - name: Set keybindings
+          become: true
           become_user: "{{ username }}"
           ansible.builtin.shell: |
             gsettings set org.gnome.settings-daemon.plugins.media-keys home "['<Super>e']"
@@ -306,6 +308,7 @@
           changed_when: false
 
         - name: Set Window Icons Preferences
+          become: true
           become_user: "{{ username }}"
           ansible.builtin.shell: |
             gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'
@@ -314,6 +317,7 @@
           changed_when: false
 
         - name: Set Idle Delay Preferences
+          become: true
           become_user: "{{ username }}"
           ansible.builtin.shell: |
             gsettings set org.gnome.desktop.session idle-delay 0
@@ -323,6 +327,7 @@
 
     - name: Configure looks and Icons
       tags: background
+      become: true
       become_user: "{{ username }}"
       block:
 
@@ -334,13 +339,12 @@
             owner: "{{ username }}"
             group: "{{ username }}"
           loop:
-            - https://images.wallpapersden.com/image/download/linux-8k-ultra-hd-art_bWVnaGmUmZqaraWkpJRmZWdpZa1qbGtm.jpg
-            - https://images.wallpapersden.com/image/download/linux-os-bw_Z2hraG6UmZqaraWkpJRma2VlrWZnZWU.jpg
             - https://podman-desktop.io/assets/images/onboarding-selkies-3ddb7cb6ee2cf9abed002b01f63b1822.png
             - https://podman-desktop.io/assets/images/renovations-21ad5798164b1bb1beceb19646b2a762.png
             - https://middleware.io/wp-content/uploads/2022/03/Microservices-Dockerization-1-2.png
 
         - name: Set Launcher Icons for Linux
+          become: true
           become_user: "{{ username }}"
           vars:
             a1: org.mozilla.firefox.desktop
@@ -357,6 +361,7 @@
 
     - name: Configure wallpaper for containers workstation
       tags: containers_looks
+      become: true
       become_user: "{{ username }}"
       block:
 
@@ -365,6 +370,7 @@
             selected_wallpaper: "{{ wallpapers_containers | random }}"
 
         - name: Set wallpaper
+          become: true
           become_user: "{{ username }}"
           ansible.builtin.shell: |
             gsettings set org.gnome.desktop.background picture-uri "file:///home/{{ username }}/.wallpapers/{{ selected_wallpaper }}"
@@ -375,6 +381,7 @@
     - name: Configure wallpaper for linux workstation
       tags: linux_looks
       become_user: "{{ username }}"
+      become: true
       block:
 
         - name: Pick a random wallpaper
@@ -382,6 +389,7 @@
             selected_wallpaper: "{{ wallpapers_linux | random }}"
 
         - name: Set wallpaper
+          become: true
           become_user: "{{ username }}"
           ansible.builtin.shell: |
             gsettings set org.gnome.desktop.background picture-uri "file:///home/{{ username }}/.wallpapers/{{ selected_wallpaper }}"
