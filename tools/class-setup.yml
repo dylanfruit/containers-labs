@@ -65,6 +65,7 @@
         - name: Multimedia Packages
           ansible.builtin.dnf:
             state: present
+            skip_broken: true
             exclude:
               - gstreamer1-plugins-bad-free-devel
               - lame-devel
@@ -81,50 +82,33 @@
       tags: container_packages
       ansible.builtin.dnf:
         state: present
+        skip_broken: true
         name:
           - yq
           - jq
           - pip
           - ansible
           - ansible-builder
-          - vim-ansible
-          - vim-syntastic-ansible
-          - fzf
           - podman
-          - ansible-collection-containers-podman
-          - pcp-pmda-podman
           - podman-compose
-          - containers-common-extra
 
     - name: Installing Extra Packages
       tags: extra_packages
       ansible.builtin.dnf:
         state: present
+        skip_broken: true
         name:
-          - geany
-          - geany-plugins-*
-          - geany-themes.noarch
-          - gtkd-geany-tags.noarch
-          - firefox
           - flatpak
           - gnome-tweaks
-          - google-chrome
+          # - google-chrome
           - vim
           - wget
           - fuse-sshfs
           - terminator
           - git
           - ranger
-          - powerline-fonts
           - code
-          - kernel-devel
-          - ncurses-devel
-          - ncurses-libs
-          - ncurses-static
-          - ncurses
-          - screen
           - bash-completion
-          - libguestfs-bash-completion
           - stress-ng
           - pamtester
           - gparted
@@ -172,7 +156,75 @@
               set ttyfast
               filetype plugin indent on
               let mapleader = ","
-            force: true
+            force: false
+
+        - name: Setup Testchecker Tool
+          ansible.builtin.get_url:
+            url: "{{ repo_path }}/testchecker.sh"
+            dest: /usr/bin/testchecker
+            mode: '0755'
+            owner: root
+            group: root
+
+        - name: Setup Alias for Testchecker Tool
+          ansible.builtin.lineinfile:
+            path: "/home/{{ username }}/.bashrc"
+            line: 'alias testchecker="sudo testchecker"'
+            mode: '0640'
+            create: true
+
+        - name: Get final scripts
+          ansible.builtin.get_url:
+            url: "{{ repo_path }}/{{ item }}"
+            dest: /usr/bin/
+            mode: "0755"
+            owner: root
+            group: root
+          no_log: true
+          loop:
+            - finals/launcher
+            - finals/final
+            - finals/testlauncher.yml
+
+        - name: Setup Module5 Requirements
+          ansible.builtin.file:
+            path: /sysadm/bin
+            state: directory
+            mode: '755'
+            owner: "{{ username }}"
+            group: "{{ username }}"
+
+        - name: Download Challenges
+          ansible.builtin.get_url:
+            url: "{{ repo_path }}/{{ item }}"
+            dest: /sysadm/bin/
+            mode: '0755'
+            owner: "{{ username }}"
+            group: "{{ username }}"
+          loop:
+            - challenges/challenge1.sh
+            - challenges/challenge2.sh
+            - challenges/challenge3.sh
+            - challenges/challenge4.sh
+            - challenges/challenge5.sh
+            - challenges/challenge6.sh
+            - challenges/challenge7.sh
+            - challenges/challenge8.sh
+            - challenges/challenge9.sh
+            - challenges/homeChecker.sh
+            - challenges/processFile.sh
+            - challenges/rabbitJumps.sh
+            - challenges/testString.sh
+            - challenges/userValidator.sh
+
+        - name: Setup Module6 Performance Init Installation
+          no_log: true
+          ansible.builtin.get_url:
+            url: "{{ repo_path }}/performance/mod6-init.sh"
+            dest: /usr/bin/mod6-init
+            mode: '0755'
+            owner: root
+            group: root
 
     - name: Configure Security
       tags: security
@@ -221,8 +273,24 @@
 
         - name: Install Cockpit
           ansible.builtin.dnf:
-            name: cockpit*
+            name:
+              - cockpit
+              - cockpit-composer
+              - cockpit-file-sharing
+              - cockpit-files
+              - cockpit-machines
+              - cockpit-navigator
+              - cockpit-networkmanager
+              - cockpit-ostree
+              - cockpit-packagekit
+              - cockpit-podman
+              - cockpit-selinux
+              - cockpit-storaged
+              - cockpit-system
+              - cockpit-ws
+              - cockpit-ws-selinux
             state: present
+            skip_broken: true
 
         - name: Enable Cockpit
           ansible.builtin.service:
@@ -271,17 +339,12 @@
           ansible.builtin.get_url:
             url: https://raw.githubusercontent.com/jmedinar/testchecker/refs/heads/main/config
             dest: "/etc/xdg/terminator/config"
-            mode: '0644'
+            mode: '0666'
             owner: root
             group: root
 
-        - name: Get user UID
-          ansible.builtin.command: "id -u {{ username }}"
-          register: user_uid
-          changed_when: false
-          check_mode: false
-
         - name: Set Terminator custom-keybindings
+          become: true
           become_user: "{{ username }}"
           vars:
             custom0: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/
@@ -291,10 +354,11 @@
             gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{{ custom0 }} command 'terminator'
             gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{{ custom0 }} binding '<Super>t'
           environment:
-            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid.stdout }}/bus"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/1000/bus"
           changed_when: false
 
         - name: Set keybindings
+          become: true
           become_user: "{{ username }}"
           ansible.builtin.shell: |
             gsettings set org.gnome.settings-daemon.plugins.media-keys home "['<Super>e']"
@@ -302,27 +366,30 @@
             gsettings set org.gnome.settings-daemon.plugins.media-keys control-center "['<Super>s']"
             gsettings set org.gnome.settings-daemon.plugins.media-keys search "['<Super>f']"
           environment:
-            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid.stdout }}/bus"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/1000/bus"
           changed_when: false
 
         - name: Set Window Icons Preferences
+          become: true
           become_user: "{{ username }}"
           ansible.builtin.shell: |
             gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'
           environment:
-            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid.stdout }}/bus"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/1000/bus"
           changed_when: false
 
         - name: Set Idle Delay Preferences
+          become: true
           become_user: "{{ username }}"
           ansible.builtin.shell: |
             gsettings set org.gnome.desktop.session idle-delay 0
           environment:
-            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid.stdout }}/bus"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/1000/bus"
           changed_when: false
 
     - name: Configure looks and Icons
       tags: background
+      become: true
       become_user: "{{ username }}"
       block:
 
@@ -334,13 +401,12 @@
             owner: "{{ username }}"
             group: "{{ username }}"
           loop:
-            - https://images.wallpapersden.com/image/download/linux-8k-ultra-hd-art_bWVnaGmUmZqaraWkpJRmZWdpZa1qbGtm.jpg
-            - https://images.wallpapersden.com/image/download/linux-os-bw_Z2hraG6UmZqaraWkpJRma2VlrWZnZWU.jpg
             - https://podman-desktop.io/assets/images/onboarding-selkies-3ddb7cb6ee2cf9abed002b01f63b1822.png
             - https://podman-desktop.io/assets/images/renovations-21ad5798164b1bb1beceb19646b2a762.png
             - https://middleware.io/wp-content/uploads/2022/03/Microservices-Dockerization-1-2.png
 
         - name: Set Launcher Icons for Linux
+          become: true
           become_user: "{{ username }}"
           vars:
             a1: org.mozilla.firefox.desktop
@@ -352,11 +418,12 @@
           ansible.builtin.shell: |
             gsettings set org.gnome.shell favorite-apps "['{{ a1 }}','{{ a2 }}','{{ a3 }}','{{ a4 }}','{{ a5 }}','{{ a6 }}']"
           environment:
-            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid.stdout }}/bus"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/1000/bus"
           changed_when: false
 
-    - name: Configure wallpaper for containers workstation
+    - name: Configure wallpaper
       tags: containers_looks
+      become: true
       become_user: "{{ username }}"
       block:
 
@@ -365,15 +432,17 @@
             selected_wallpaper: "{{ wallpapers_containers | random }}"
 
         - name: Set wallpaper
+          become: true
           become_user: "{{ username }}"
           ansible.builtin.shell: |
             gsettings set org.gnome.desktop.background picture-uri "file:///home/{{ username }}/.wallpapers/{{ selected_wallpaper }}"
           environment:
-            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid.stdout }}/bus"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/1000/bus"
           changed_when: false
 
-    - name: Configure wallpaper for linux workstation
+    - name: Configure wallpaper
       tags: linux_looks
+      become: true
       become_user: "{{ username }}"
       block:
 
@@ -382,14 +451,16 @@
             selected_wallpaper: "{{ wallpapers_linux | random }}"
 
         - name: Set wallpaper
+          become: true
           become_user: "{{ username }}"
           ansible.builtin.shell: |
             gsettings set org.gnome.desktop.background picture-uri "file:///home/{{ username }}/.wallpapers/{{ selected_wallpaper }}"
           environment:
-            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid.stdout }}/bus"
+            DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/1000/bus"
           changed_when: false
 
     - name: Final Touches
+      become: true
       tags: final
       block:
 
@@ -397,4 +468,5 @@
           ansible.builtin.dnf:
             name: '*'
             state: latest
+            security: true
             update_only: true

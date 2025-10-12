@@ -1,13 +1,13 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Author: Juan Medina
 # Date: Mar 2025
-# Description: Setup Microservices Class System
+# Description: Setup Linux Class System
 
 # Cause pipelines to return the exit status of the last command that failed.
 set -o pipefail
 
 # --- Configuration ---
-PLAYBOOK="class-setup.yml"
+PLAYBOOK_URL="https://raw.githubusercontent.com/jmedinar/testchecker/refs/heads/main/class-setup.yml"
 # Tags to run from the playbook
 PLAYBOOK_TAGS="repos,container_packages,extra_packages,configurations,security,cockpit,looks,background,containers_looks,final"
 # --- End Configuration ---
@@ -44,26 +44,28 @@ fi
 
 # 5. Install required packages
 echo "Preflight configuration..."
-if ! dnf install -yq ansible git figlet lolcat curl
-then
-    echo "Error: Failed to install prerequisite packages." >&2
-    exit 1
-fi
+dnf install -yq ansible git figlet lolcat curl
 
 # 6. Prepare visuals
 clear
-echo "Starting Microservices Class Workstation Setup..."
+echo "Starting Linux Setup process..."
 sleep 5
-figlet "Microservices Class Setup" | lolcat
+figlet "Linux Setup" | lolcat
+
+# 7. Download the playbook to a temporary file
+# Create a secure temporary file
+TEMP_PLAYBOOK=$(mktemp /tmp/class-setup.XXXXXX.yml)
+# Ensure temp file is removed on script exit (normal, error, or interrupt)
+# trap 'rm -f "$TEMP_PLAYBOOK"' EXIT
+# Download using curl: -f fail on server errors, -L follow redirects, -o output to file
+if ! curl -fL --connect-timeout 15 --max-time 60 -o "$TEMP_PLAYBOOK" "$PLAYBOOK_URL"; then
+    echo "Error: Failed to download playbook from $PLAYBOOK_URL" >&2
+    exit 3
+fi
 
 # === Execution ===
 
-if ! ansible-playbook "$PLAYBOOK" --tags "$PLAYBOOK_TAGS"
-then
-    echo "Error: Ansible playbook execution failed." >&2
-    # You might want to exit here to prevent rebooting a misconfigured system
-    exit 1
-fi
+ansible-playbook "$TEMP_PLAYBOOK" --tags "$PLAYBOOK_TAGS"
 
 # === Completion ===
 
@@ -72,4 +74,5 @@ echo "The system will automatically reboot in 20 seconds..."
 echo "      press Ctrl+c if you need to cancel the reboot process"
 sleep 20
 echo "Rebooting now!"
+rm -rf /tmp/class-setup.yml
 reboot
