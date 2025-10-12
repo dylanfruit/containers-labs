@@ -1,0 +1,45 @@
+---
+- name: Testing the pharmacy application
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    base_url: "http://127.0.0.1:"
+    inventory: "5001/view_inventory"
+    order_place: "5002/place_order"
+    order_view: "5002/view_orders"
+    customer: "5003/view_customer"
+
+  tasks:
+
+    - name: Check inventory
+      ansible.builtin.uri:
+        url: "{{ base_url }}{{ inventory }}"
+        method: GET
+
+    - name: Get customer details
+      ansible.builtin.uri:
+        url: "{{ base_url }}{{ customer }}/{{ item }}"
+        method: GET
+      loop:
+        - customer_id_1
+        - customer_id_2
+
+    - name: Place a new order
+      ansible.builtin.uri:
+        url: "{{ base_url }}{{ order_place }}"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+        body_format: json
+        body: "{{ item }}"
+      loop:
+        - { customer_id: "customer_id_1", medicine: "medicine_A", quantity: 5 }
+        - { customer_id: "customer_id_2", medicine: "medicine_B", quantity: 3 }
+        - { customer_id: "customer_id_1", medicine: "medicine_B", quantity: 2 }
+
+    - name: Print orders
+      ansible.builtin.uri:
+        url: "{{ base_url }}{{ order_view }}"
+        method: GET
