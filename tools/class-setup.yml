@@ -444,6 +444,7 @@
       tags: linux_looks
       become: true
       become_user: "{{ username }}"
+      become: true
       block:
 
         - name: Pick a random wallpaper

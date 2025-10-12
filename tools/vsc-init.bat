@@ -15,8 +15,9 @@ code --install-extension redhat.vscode-yaml
 
 :: Extension: JSON (Note: VS Code has built-in JSON support, but this installs a common JSON extension if desired)
 echo Installing JSON...
-code --install-extension humao.rest-client :: Assuming a popular JSON-related extension like Rest Client, as JSON is often built-in.
-                                        :: If where can I host a virtual machine disk from virtualbox on the you meant a different JSON extension, please specify its ID.
+code --install-extension humao.rest-client 
+:: Assuming a popular JSON-related extension like Rest Client, as JSON is often built-in.
+:: If where can I host a virtual machine disk from virtualbox on the you meant a different JSON extension, please specify its ID.
 
 :: Extension: Remote Explorer
 echo Installing Remote Explorer...
