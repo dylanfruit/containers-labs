@@ -158,74 +158,6 @@
               let mapleader = ","
             force: false
 
-        - name: Setup Testchecker Tool
-          ansible.builtin.get_url:
-            url: "{{ repo_path }}/testchecker.sh"
-            dest: /usr/bin/testchecker
-            mode: '0755'
-            owner: root
-            group: root
-
-        - name: Setup Alias for Testchecker Tool
-          ansible.builtin.lineinfile:
-            path: "/home/{{ username }}/.bashrc"
-            line: 'alias testchecker="sudo testchecker"'
-            mode: '0640'
-            create: true
-
-        - name: Get final scripts
-          ansible.builtin.get_url:
-            url: "{{ repo_path }}/{{ item }}"
-            dest: /usr/bin/
-            mode: "0755"
-            owner: root
-            group: root
-          no_log: true
-          loop:
-            - finals/launcher
-            - finals/final
-            - finals/testlauncher.yml
-
-        - name: Setup Module5 Requirements
-          ansible.builtin.file:
-            path: /sysadm/bin
-            state: directory
-            mode: '755'
-            owner: "{{ username }}"
-            group: "{{ username }}"
-
-        - name: Download Challenges
-          ansible.builtin.get_url:
-            url: "{{ repo_path }}/{{ item }}"
-            dest: /sysadm/bin/
-            mode: '0755'
-            owner: "{{ username }}"
-            group: "{{ username }}"
-          loop:
-            - challenges/challenge1.sh
-            - challenges/challenge2.sh
-            - challenges/challenge3.sh
-            - challenges/challenge4.sh
-            - challenges/challenge5.sh
-            - challenges/challenge6.sh
-            - challenges/challenge7.sh
-            - challenges/challenge8.sh
-            - challenges/challenge9.sh
-            - challenges/homeChecker.sh
-            - challenges/processFile.sh
-            - challenges/rabbitJumps.sh
-            - challenges/testString.sh
-            - challenges/userValidator.sh
-
-        - name: Setup Module6 Performance Init Installation
-          no_log: true
-          ansible.builtin.get_url:
-            url: "{{ repo_path }}/performance/mod6-init.sh"
-            dest: /usr/bin/mod6-init
-            mode: '0755'
-            owner: root
-            group: root
-
     - name: Configure Security
       tags: security
       block:
@@ -275,20 +207,6 @@
           ansible.builtin.dnf:
             name:
               - cockpit*
-              # - cockpit-composer
-              # - cockpit-file-sharing
-              # - cockpit-files
-              # - cockpit-machines
-              # - cockpit-navigator
-              # - cockpit-networkmanager
-              # - cockpit-ostree
-              # - cockpit-packagekit
-              # - cockpit-podman
-              # - cockpit-selinux
-              # - cockpit-storaged
-              # - cockpit-system
-              # - cockpit-ws
-              # - cockpit-ws-selinux
             state: present
             skip_broken: true
 
