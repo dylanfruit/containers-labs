@@ -17,14 +17,24 @@
       ansible.builtin.uri:
         url: "{{ base_url }}{{ inventory }}"
         method: GET
+      register: inventory_results
+
+    - name: Display inventory results
+      ansible.builtin.debug:
+        var: inventory_results
 
     - name: Get customer details
       ansible.builtin.uri:
         url: "{{ base_url }}{{ customer }}/{{ item }}"
         method: GET
+      register: customer_details_results
       loop:
         - customer_id_1
         - customer_id_2
+
+    - name: Display customer details results
+      ansible.builtin.debug:
+        var: customer_details_results
 
     - name: Place a new order
       ansible.builtin.uri:
@@ -39,7 +49,12 @@
         - { customer_id: "customer_id_2", medicine: "medicine_B", quantity: 3 }
         - { customer_id: "customer_id_1", medicine: "medicine_B", quantity: 2 }
 
-    - name: Print orders
+    - name: Get orders
       ansible.builtin.uri:
         url: "{{ base_url }}{{ order_view }}"
         method: GET
+      register: orders_results
+
+    - name: Display orders results
+      ansible.builtin.debug:
+        var: orders_results
