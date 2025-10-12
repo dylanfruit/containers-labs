@@ -7,7 +7,7 @@
 set -o pipefail
 
 # --- Configuration ---
-PLAYBOOK_URL="https://raw.githubusercontent.com/jmedinar/testchecker/refs/heads/main/class-setup.yml"
+PLAYBOOK_URL="https://raw.githubusercontent.com/containersorg/containers-labs/refs/heads/main/tools/class-setup.yml"
 # Tags to run from the playbook
 PLAYBOOK_TAGS="repos,container_packages,extra_packages,configurations,security,cockpit,looks,background,containers_looks,final"
 # --- End Configuration ---
